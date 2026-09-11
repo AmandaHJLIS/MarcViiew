@@ -50,6 +50,8 @@ Note: MarcViiew is currently a work in progress. Some menu options and planned f
 
 This project is licensed under the MIT License. See the (LICENSE) file for details.
 
+The MIT License applies to MarcViiew's original source code; third-party data and resources remain subject to their respective terms.
+
 ## Credits
 
 GameTDB — for providing Wii game information and metadata.
