@@ -19,3 +19,5 @@ This project is licensed under the MIT License. See the (LICENSE) file for detai
 ## Credits
 
 - GameTBD for providing game information files.
+- Library of Congress for MARC21 metadata standards
+- TC 46 for ISO 2709 standards for bibliographic descriptions, titled Information and documentation—Format for information exchange.
