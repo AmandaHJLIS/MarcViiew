@@ -7,8 +7,8 @@ MarcViiew is a free and open-source LMS (Library management system) for the Wii.
 
 This homebrew application was designed in mind for libraries, librarians, library technicians and library & information science students. 
 
-MarcViiew uses the MARC 21 bibliographic format as the basis for its cataloguing and MARC record functionality. 
-MARC 21 is maintained by the Library of Congress Network Development and MARC Standards Office.
+MarcViiew uses the MARC 21 bibliographic format as the basis for its cataloguing and MARC record functionality. MARC 21 is maintained by the Library of Congress Network Development and MARC Standards Office.
+
 For authoritative documentation and current field definitions, please refer to the MARC 21 Format for Bibliographic Data provided by the Library of Congress.
 
 The current WIP version uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and is designed to provide the metadata used by MarcViiew.
