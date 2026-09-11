@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<app version="1">
-    <name>MarcViiew</name>
-    <coder>Riruru</coder>
-    <version>0.1.0</version>
-    <release_date>20260911</release_date>
-    <short_description>Wii Library Management System</short_description>
-    <long_description>MarcViiew is a Wii-based library management system for cataloguing and viewing video game records, including MARC21 metadata.</long_description>
-</app>
