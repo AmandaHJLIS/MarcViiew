@@ -16,21 +16,21 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 ## Current Features
 
-Detects Wii games stored on a USB device
-Identifies games using their Wii Game ID
-Matches games against the MarcViiew database
-Displays game metadata
-Displays game synopses
-Scrollable game information
-Nintendo Wii Homebrew Channel support
+- Detects Wii games stored on a USB device
+- Identifies games using their Wii Game ID
+- Matches games against the MarcViiew database
+- Displays game metadata
+- Displays game synopses
+- Scrollable game information
+- Nintendo Wii Homebrew Channel support
 
 ## Planned Features
-Game searching
-MARC 21 record viewing
-Additional cataloguing metadata
-Improved catalogue navigation
-Settings
-Additional library management features
+- Game searching
+- MARC 21 record viewing
+- Additional cataloguing metadata
+- Improved catalogue navigation
+-Settings
+- Additional library management features
 
 ## Setup
 
