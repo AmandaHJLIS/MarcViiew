@@ -3,7 +3,7 @@
 
 MarcViiew is a Wii-based library management system for cataloguing and viewing video game records, including MARC21 metadata.
 
-MarcViiew is a free and open-source LMS (Library management system) for the Wii and the games that are installed on either a USB or SD card, it can display game information for cataloguing purposes and MARC21 metadata information if you are adding it into your own LMS. 
+MarcViiew is a free and open-source LMS (Library management system) for the Wii. Using either a USB or SD card, it can display game information for cataloguing purposes and MARC21 metadata information if you are adding it into your own LMS. 
 
 This homebrew application was designed in mind for libraries, librarians, library technicians and library & information science students. 
 
