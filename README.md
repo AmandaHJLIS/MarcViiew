@@ -10,13 +10,41 @@ This homebrew application was designed in mind for libraries, librarians, librar
 Please reference 'MARC 21 Format for Bibliographic Data' by the Library of Congress when accessing MARC21 metadata records.
 https://www.loc.gov/marc/bibliographic/
 
+The current WIP version uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and is designed to provide the metadata used by MarcViiew.
+
 <img width="371.5" height="229" alt="image" src="https://github.com/user-attachments/assets/d2f20238-7758-4c1a-8615-52425e828136" />
+
+## Current Features
+
+Detects Wii games stored on a USB device
+Identifies games using their Wii Game ID
+Matches games against the MarcViiew database
+Displays game metadata
+Displays game synopses
+Scrollable game information
+Nintendo Wii Homebrew Channel support
+
+## Planned Features
+Game searching
+MARC 21 record viewing
+Additional cataloguing metadata
+Improved catalogue navigation
+Settings
+Additional library management features
 
 ## Setup
 
-1. Copy the 'wii-lms' file to your apps folder located on the SD card used for the wii.
-2. Paste the MarcViiew_games.txt file to the root of your SD card.
-3. Go to the homebrew channel and select Marcviiew.
+1. Copy the apps folder contents to the apps folder on the SD card used by your Wii.
+The application should be located at:
+SD:/apps/marcviiew/
+
+2. Copy marcviiew_games.txt to the root of the SD card:
+SD:/marcviiew_games.txt
+
+3. Connect the USB storage device containing your Wii games.
+4. Open the Homebrew Channel and launch MarcViiew.
+
+Note: MarcViiew is currently a work in progress. Some menu options and planned features are not yet implemented.
 
 ## License
 
@@ -24,6 +52,6 @@ This project is licensed under the MIT License. See the (LICENSE) file for detai
 
 ## Credits
 
-- GameTBD for providing game information files.
-- Library of Congress for MARC21 metadata standards.
-- TC 46 for ISO 2709 standards for bibliographic descriptions, titled Information and documentation—Format for information exchange.
+GameTDB — for providing Wii game information and metadata.
+Library of Congress — for the MARC 21 bibliographic standards.
+ISO/TC 46 — for ISO 2709, Information and documentation — Format for information exchange.
