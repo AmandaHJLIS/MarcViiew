@@ -14,6 +14,10 @@ https://www.loc.gov/marc/bibliographic/
 
 ## Setup
 
+1. Copy the 'wii-lms' file to your apps folder located on the SD card used for the wii.
+2. Paste the MarcViiew_games.txt file to the root of your SD card.
+3. Go to the homebrew channel and select Marcviiew.
+
 ## License
 
 This project is licensed under the MIT License. See the (LICENSE) file for details.
