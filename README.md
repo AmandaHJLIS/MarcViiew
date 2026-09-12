@@ -1,24 +1,38 @@
 <img width="370" height="67" alt="21d000b48fc0ec2adb4efcf95f6ebed8" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
 
-MarcViiew is a Wii-based library management system for cataloguing and viewing video game records, including MARC21 metadata.
+MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
 
-MarcViiew is a free and open-source LMS (Library management system) for the Wii. Using either a USB or SD card, it can display game information for cataloguing purposes and MARC21 metadata information if you are adding it into your own LMS.
+MarcViiew combines Wii game detection with library and information science principles, allowing games stored on an SD card or USB device to be identified by their Wii Game ID and matched against a local metadata database. Game information can then be viewed for cataloguing purposes alongside MARC 21 bibliographic records.
 
-This homebrew application was designed in mind for libraries, librarians, library technicians and library & information science students. 
-
-MarcViiew uses the MARC 21 bibliographic format as the basis for its cataloguing and MARC record functionality. MARC 21 is maintained by the Library of Congress Network Development and MARC Standards Office.
-
-For authoritative documentation and current field definitions, please refer to the MARC 21 Format for Bibliographic Data provided by the Library of Congress.
-
-The current WIP version uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and is designed to provide the metadata used by MarcViiew.
+The project is designed with libraries, librarians, library technicians, and library and information science students in mind. It explores how established library cataloguing standards and controlled vocabularies can be applied to video game collections within a Wii homebrew environment.
 
 <img width="371.5" height="229" alt="image" src="https://github.com/user-attachments/assets/d2f20238-7758-4c1a-8615-52425e828136" />
+
+## MARC 21
+
+<img width="500" height="108" alt="image" src="https://github.com/user-attachments/assets/11d4aa98-af50-4a5e-9f29-7e3c70fe9637" />
+
+MarcViiew uses the MARC 21 bibliographic format as the basis for its cataloguing and MARC record functionality.
+
+MARC 21 is maintained by the Library of Congress Network Development and MARC Standards Office. MarcViiew is intended to provide a practical way to view and experiment with MARC 21 records for video game collections.
+
+For authoritative documentation and current field definitions, please refer to the MARC 21 Format for Bibliographic Data provided by the Library of Congress.
 
 ## Wiiext
 
 <img width="578" height="204" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
 
-Wiiext is a controlled vocabulary and thesaurus developed for describing Wii video games and related software. MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records.
+Wiiext is a controlled vocabulary and thesaurus developed specifically for describing Wii video games and related software.
+
+MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records. Wiiext is intended to provide a structured vocabulary for video game cataloguing, with preferred terms and thesaurus relationships designed for use within MarcViiew.
+
+## Game Metadata
+
+MarcViiew currently uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and provides the metadata used by MarcViiew to identify and describe games.
+
+GameTDB provides information including game IDs, titles, publishers, developers, release dates, regions, genres, and synopses. The GameTDB data is processed into a format that can be used by MarcViiew on the Wii.
+
+MarcViiew's GameTDB-derived database is currently a work in progress and may be expanded or refined as development continues.
 
 ## Current Features
 
@@ -50,7 +64,7 @@ The application should be located at:
 SD:/apps/marcviiew/
 
 2. Copy marcviiew_games.txt and marcviiew_marc.txt to the root of the SD card:
-SD:/marcviiew_games.txt
+SD:/marcviiew_games.txt SD:/marcviiew_marc.txt
 
 3. Connect the USB storage device containing your Wii games.
 4. Open the Homebrew Channel and launch MarcViiew.
