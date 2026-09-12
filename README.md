@@ -40,14 +40,14 @@ MarcViiew uses the MARC 21 bibliographic format as the foundation for its catalo
 
 These conventions are intended to provide consistent representation of video game metadata within MarcViiew and do not replace the official MARC 21 standards.
 
-# Metadata
+### Metadata
 - GameTDB is currently used as the primary source for game metadata.
 - Wii Game IDs are used as the primary identifier for games.
 - Dates supplied by GameTDB are normalised to YYYY-MM-DD.
 - Publisher and developer information is retained from the source metadata.
 - GameTDB genre terms are mapped to preferred Wiiext terms where an appropriate term exists.
 
-# MARC 21
+### MARC 21
 - 001 contains the Wii Game ID.
 - 245 contains the game title.
 - Non-filing characters are accounted for in the 245 second indicator.
