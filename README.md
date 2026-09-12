@@ -25,17 +25,18 @@ The current WIP version uses a locally stored database generated from GameTDB da
 - Nintendo Wii Homebrew Channel support
 - Classic controller support
 - Search bar for locating games
+- MARC 21 record viewing
+- Additional cataloguing metadata
+- Controlled vocabulary/thesaurus 'Wiiext'
+- Marcviiew game database generated from GameTDB data.
 
 ## Planned Features
 
-- MARC 21 record viewing
-- Additional cataloguing metadata
 - Improved catalogue navigation
 - Settings
 - UI
 - Wad channel
 - Built in mp3 player
-- Controlled vocabulary/thesaurus 'Wiiext'
 
 ## Setup
 
