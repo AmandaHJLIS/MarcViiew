@@ -14,6 +14,12 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 <img width="371.5" height="229" alt="image" src="https://github.com/user-attachments/assets/d2f20238-7758-4c1a-8615-52425e828136" />
 
+## Wiiext
+
+<img width="551" height="290" alt="image" src="https://github.com/user-attachments/assets/cac785c0-e597-4d61-9fbb-40bcfc31d87c" />
+
+Wiiext is a controlled vocabulary and thesaurus developed for describing Wii video games and related software. MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records.
+
 ## Current Features
 
 - Detects Wii games stored on a USB device and SD card
