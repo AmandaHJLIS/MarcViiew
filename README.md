@@ -82,6 +82,8 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - UI improvements
 - WAD Channel
 - Built-in MP3 player
+- .mrc enconder
+- .mrc importer
 
 ## Setup
 
