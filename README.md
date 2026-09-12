@@ -79,8 +79,8 @@ These conventions may change as MarcViiew's cataloguing model develops.
 ## Planned Features
 
 - Allow to choice between MARC21 and normal records when searching
-- Settings
-- UI improvements
+- Further settings options
+- UI improvements (Freetypegx)
 - WAD Channel
 - Built-in MP3 player
 - .mrc enconder
