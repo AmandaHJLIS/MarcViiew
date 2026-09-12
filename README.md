@@ -20,7 +20,7 @@ For authoritative documentation and current field definitions, please refer to t
 
 ## Wiiext
 
-<img width="578" height="204" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
+<img width="289" height="`102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
 
 Wiiext is a controlled vocabulary and thesaurus developed specifically for describing Wii video games and related software.
 
