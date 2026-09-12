@@ -30,8 +30,10 @@ The current WIP version uses a locally stored database generated from GameTDB da
 - MARC 21 record viewing
 - Additional cataloguing metadata
 - Improved catalogue navigation
--Settings
-- Additional library management features
+- Settings
+- UI
+- Wad channel
+- Built in mp3 player
 
 ## Setup
 
