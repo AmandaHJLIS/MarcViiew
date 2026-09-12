@@ -34,6 +34,32 @@ GameTDB provides information including game IDs, titles, publishers, developers,
 
 MarcViiew's GameTDB-derived database is currently a work in progress and may be expanded or refined as development continues.
 
+## MarcViiew Cataloguing Rules
+
+MarcViiew uses the MARC 21 bibliographic format as the foundation for its cataloguing system. Where source metadata requires normalisation or adaptation for use within MarcViiew, project-specific cataloguing conventions may be applied.
+
+These conventions are intended to provide consistent representation of video game metadata within MarcViiew and do not replace the official MARC 21 standards.
+
+# Metadata
+- GameTDB is currently used as the primary source for game metadata.
+- Wii Game IDs are used as the primary identifier for games.
+- Dates supplied by GameTDB are normalised to YYYY-MM-DD.
+- Publisher and developer information is retained from the source metadata.
+- GameTDB genre terms are mapped to preferred Wiiext terms where an appropriate term exists.
+
+# MARC 21
+- 001 contains the Wii Game ID.
+- 245 contains the game title.
+- Non-filing characters are accounted for in the 245 second indicator.
+- 264 contains publication/distribution information and the release date used by MarcViiew.
+- 300 describes the physical Wii disc.
+- 500 contains the game synopsis.
+- 542 contains selected metadata provenance information.
+- 655 contains Wiiext genre/form terms.
+- 655 $2 identifies Wiiext as the source vocabulary.
+
+These conventions may change as MarcViiew's cataloguing model develops.
+
 ## Current Features
 
 - Detects Wii games stored on a USB device and SD card
