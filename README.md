@@ -43,7 +43,7 @@ The current WIP version uses a locally stored database generated from GameTDB da
 The application should be located at:
 SD:/apps/marcviiew/
 
-2. Copy marcviiew_games.txt to the root of the SD card:
+2. Copy marcviiew_games.txt and marcviiew_marc.txt to the root of the SD card:
 SD:/marcviiew_games.txt
 
 3. Connect the USB storage device containing your Wii games.
