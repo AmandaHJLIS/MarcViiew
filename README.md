@@ -17,17 +17,18 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 ## Current Features
 
-- Detects Wii games stored on a USB device
+- Detects Wii games stored on a USB device and SD card
 - Identifies games using their Wii Game ID
 - Matches games against the MarcViiew database
 - Displays game metadata
 - Displays game synopses
 - Scrollable game information
 - Nintendo Wii Homebrew Channel support
+- Classic controller support
+- Search bar for locating games
 
 ## Planned Features
 
-- Classic controller support
 - MARC 21 record viewing
 - Additional cataloguing metadata
 - Improved catalogue navigation
