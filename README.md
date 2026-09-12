@@ -53,9 +53,9 @@ MarcViiew's GameTDB-derived database is currently a work in progress and may be 
 ## Planned Features
 
 - Settings
-- UI
-- Wad channel
-- Built in mp3 player
+- UI improvements
+- WAD Channel
+- Built-in MP3 player
 
 ## Setup
 
@@ -69,7 +69,11 @@ SD:/marcviiew_games.txt SD:/marcviiew_marc.txt
 3. Connect the USB storage device containing your Wii games.
 4. Open the Homebrew Channel and launch MarcViiew.
 
-Note: MarcViiew is currently a work in progress. Some menu options and planned features are not yet implemented.
+## Note
+
+MarcViiew remains a work in progress. The current release focuses on establishing the core catalogue, metadata and MARC 21 functionality. Additional UI and Wii-specific features will be developed in future releases.
+
+Thanks to GameTDB, the Library of Congress, ISO/TC 46, and Boipurple for the resources and standards used by the project.
 
 ## License
 
