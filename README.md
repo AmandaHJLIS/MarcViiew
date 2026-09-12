@@ -1,4 +1,4 @@
-# MarcViiew
+<img width="224" height="336" alt="image" src="https://github.com/user-attachments/assets/0dac2d82-8e3a-4337-b565-d9742a1dd67f" /># MarcViiew
 <img width="370" height="67" alt="21d000b48fc0ec2adb4efcf95f6ebed8" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
 
 MarcViiew is a Wii-based library management system for cataloguing and viewing video game records, including MARC21 metadata.
@@ -36,6 +36,7 @@ The current WIP version uses a locally stored database generated from GameTDB da
 - UI
 - Wad channel
 - Built in mp3 player
+- Controlled vocabulary/thesaurus 'Wiiext'
 
 ## Setup
 
