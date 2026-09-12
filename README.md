@@ -32,7 +32,6 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 ## Planned Features
 
-- Improved catalogue navigation
 - Settings
 - UI
 - Wad channel
