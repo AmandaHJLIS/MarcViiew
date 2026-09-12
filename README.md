@@ -26,6 +26,9 @@ The current WIP version uses a locally stored database generated from GameTDB da
 - Nintendo Wii Homebrew Channel support
 
 ## Planned Features
+
+- SD card reading
+- Classic controller support
 - Game searching
 - MARC 21 record viewing
 - Additional cataloguing metadata
