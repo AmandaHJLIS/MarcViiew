@@ -16,7 +16,7 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 ## Wiiext
 
-<img width="551" height="290" alt="image" src="https://github.com/user-attachments/assets/cac785c0-e597-4d61-9fbb-40bcfc31d87c" />
+<img width="578" height="204" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
 
 Wiiext is a controlled vocabulary and thesaurus developed for describing Wii video games and related software. MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records.
 
