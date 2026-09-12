@@ -27,7 +27,6 @@ The current WIP version uses a locally stored database generated from GameTDB da
 
 ## Planned Features
 
-- SD card reading
 - Classic controller support
 - MARC 21 record viewing
 - Additional cataloguing metadata
