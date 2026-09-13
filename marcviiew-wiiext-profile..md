@@ -220,4 +220,4 @@ Please refer to the procedures and documentation provided by the relevant LMS wh
 
 | Version | Date       | Changes                              |
 | ------- | ---------- | ------------------------------------ |
-| 0.1     | 2026-09-13 | Initial documented WiiExt vocabulary |
+| 1.0     | 2026-09-13 | Initial documented WiiExt vocabulary |
