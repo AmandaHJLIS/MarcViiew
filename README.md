@@ -18,7 +18,7 @@ MARC 21 is maintained by the Library of Congress Network Development and MARC St
 
 For authoritative documentation and current field definitions, please refer to the MARC 21 Format for Bibliographic Data provided by the Library of Congress.
 
-For Marcviiew authoritative documentation and current field definitions, please refer to below.
+For Marcviiew authoritative documentation and current field definitions, please refer to [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
 
 ## Wiiext
 
