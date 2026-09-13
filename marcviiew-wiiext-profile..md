@@ -1,7 +1,9 @@
 # WiiExt Vocabulary Profile
 
 **Status:** Current / Development
+
 **Version:** 1.0  
+
 **Last Updated:** 13 September 2026
 
 ## 1. Overview
