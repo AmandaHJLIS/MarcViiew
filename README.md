@@ -30,6 +30,9 @@ MarcViiew uses Wiiext terms to provide consistent genre and form classification 
 
 Wiiext is an unofficial extension/profile developed for use with MarcViiew. It is not an official Library of Congress extension, vocabulary, or standard, and is not endorsed or maintained by the Library of Congress.
 
+For the controlled vocabulary and thesaurus profile, see the
+[MarcViiew Controlled Vocabulary and Thesaurus  Profile](marcviiew-wiiext-profile..md).
+
 ## Game Metadata
 
 MarcViiew currently uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and provides the metadata used by MarcViiew to identify and describe games.
