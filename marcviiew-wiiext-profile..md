@@ -1,4 +1,4 @@
-# WiiExt Controlled Vocabulary Profile
+# WiiExt Controlled Vocabulary and Thesaurus Profile
 
 **Status:** Current / Development
 
