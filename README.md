@@ -80,9 +80,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 - Allow to choice between MARC21 and normal records when searching
 - Further settings options
-- UI improvements (Freetypegx)
-- WAD Channel
-- Built-in MP3 player
+- UI improvements
 - .mrc enconder
 - .mrc importer
 
