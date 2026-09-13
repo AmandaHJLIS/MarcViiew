@@ -75,6 +75,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - Additional cataloguing metadata
 - Controlled vocabulary/thesaurus 'Wiiext'
 - Marcviiew game database generated from GameTDB data.
+- Search for either MARC21 or normal game records with the search option.
 
 ## Planned Features
 
