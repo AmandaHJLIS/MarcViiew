@@ -1,4 +1,4 @@
-# WiiExt Vocabulary Profile
+# WiiExt Controlled Vocabulary Profile
 
 **Status:** Current / Development
 
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-WiiExt is an unofficial controlled vocabulary developed for use with MarcViiew and related Wii game cataloguing projects.
+WiiExt is an unofficial controlled vocabulary and thesaurus developed for use with MarcViiew and related Wii game cataloguing projects.
 
 The vocabulary provides terminology for describing video game genres, forms, themes, settings, and other related characteristics.
 
@@ -196,9 +196,9 @@ The documentation describes the structure and intended use of the vocabulary; th
 
 ## 9. Non-Official Status
 
-WiiExt is an unofficial vocabulary developed for use with MarcViiew.
+WiiExt is an unofficial extension developed for use with MarcViiew.
 
-It is not an official Library of Congress vocabulary, extension, or standard.
+It is not an official Library of Congress vocabulary, thesaurus, extension, or standard.
 
 It is not endorsed, maintained, or administered by the Library of Congress.
 
