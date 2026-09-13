@@ -6,7 +6,7 @@ MarcViiew combines Wii game detection with library and information science princ
 
 The project is designed with libraries, librarians, library technicians, and library and information science students in mind. It explores how established library cataloguing standards and controlled vocabularies can be applied to video game collections within a Wii homebrew environment.
 
-<img width="371.5" height="229" alt="image" src="https://github.com/user-attachments/assets/d2f20238-7758-4c1a-8615-52425e828136" />
+<img width="1052" height="437" alt="image" src="https://github.com/user-attachments/assets/3495ca94-d0d8-4442-bed4-fc87754e3072" />
 
 ## MARC 21
 
