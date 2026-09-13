@@ -27,6 +27,8 @@ Wiiext is a controlled vocabulary and thesaurus developed specifically for descr
 
 MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records. Wiiext is intended to provide a structured vocabulary for video game cataloguing, with preferred terms and thesaurus relationships designed for use within MarcViiew.
 
+Wiiext is an unofficial extension/profile developed for use with MarcViiew. It is not an official Library of Congress extension, vocabulary, or standard, and is not endorsed or maintained by the Library of Congress.
+
 ## Game Metadata
 
 MarcViiew currently uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and provides the metadata used by MarcViiew to identify and describe games.
@@ -101,7 +103,7 @@ SD:/marcviiew_games.txt SD:/marcviiew_marc.txt
 
 MarcViiew remains a work in progress. The current release focuses on establishing the core catalogue, metadata and MARC 21 functionality.
 
-MarcViiew field definitions and WiiExt may not be compatible with your LMS. Please refer to your LMS procedures for configuration.
+MarcViiew field definitions and Wiiext may not be compatible with your LMS. Please refer to your LMS procedures for configuration.
 
 Thanks to GameTDB, the Library of Congress, ISO/TC 46, and Boipurple for the resources and standards used by the project.
 
