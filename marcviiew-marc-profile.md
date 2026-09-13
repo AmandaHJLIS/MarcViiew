@@ -19,7 +19,7 @@ WiiExt vocabulary for game genre/form terms.
 
 ## 2. Field Definitions
 
-### 001 — Control Number
+## 001 — Control Number
 
 **MarcViiew use:** Wii Game ID
 
