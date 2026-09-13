@@ -1,7 +1,9 @@
 # MarcViiew MARC21 Profile
 
 **Status:** Current  
+
 **Version:** 1.0  
+
 **Last Updated:** 13 September 2026
 
 ## 1. Overview
