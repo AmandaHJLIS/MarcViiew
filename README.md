@@ -76,10 +76,10 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - Controlled vocabulary/thesaurus 'Wiiext'
 - Marcviiew game database generated from GameTDB data.
 - Search for either MARC21 or normal game records with the search option.
+- The option to reload the USB ports/SD card and databases
 
 ## Planned Features
 
-- Further settings options
 - .mrc enconder
 - .mrc importer
 
