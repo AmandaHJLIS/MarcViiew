@@ -42,9 +42,7 @@ Example:
 In this example, 4 indicates that "The " is treated as
 non-filing text.
 
-## 264 — Production, Publication, Distribution, Manufacture,
-
-and Copyright Notice
+## 264 — Production, Publication, Distribution, Manufacture, and Copyright Notice
 
 MarcViiew use: Publication/distribution information and
 release date
