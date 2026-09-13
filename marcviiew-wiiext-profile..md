@@ -1,11 +1,8 @@
-WiiExt Vocabulary Profile
+# WiiExt Vocabulary Profile
 
 **Status:** Current / Development
-
 **Version:** 1.0
-
 **Vocabulary identifier:** `Wiiext`
-
 **Application:** MarcViiew
 
 ---
