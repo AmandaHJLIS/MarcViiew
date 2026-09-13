@@ -78,9 +78,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Planned Features
 
-- Allow to choice between MARC21 and normal records when searching
 - Further settings options
-- UI improvements
 - .mrc enconder
 - .mrc importer
 
