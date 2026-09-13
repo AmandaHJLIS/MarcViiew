@@ -1,4 +1,4 @@
-# WiiExt Vocabulary Profile
+WiiExt Vocabulary Profile
 
 **Status:** Current / Development
 **Version:** 0.1
