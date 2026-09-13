@@ -98,7 +98,7 @@ SD:/marcviiew_games.txt SD:/marcviiew_marc.txt
 
 ## Note
 
-MarcViiew remains a work in progress. The current release focuses on establishing the core catalogue, metadata and MARC 21 functionality. Additional UI and Wii-specific features will be developed in future releases.
+MarcViiew remains a work in progress. The current release focuses on establishing the core catalogue, metadata and MARC 21 functionality.
 
 Thanks to GameTDB, the Library of Congress, ISO/TC 46, and Boipurple for the resources and standards used by the project.
 
