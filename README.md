@@ -62,6 +62,9 @@ These conventions are intended to provide consistent representation of video gam
 - 655 contains Wiiext genre/form terms.
 - 655 $2 identifies Wiiext as the source vocabulary.
 
+For the complete field definitions and usage rules, see the
+[MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
+
 These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Current Features
