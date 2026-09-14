@@ -33,6 +33,44 @@ Wiiext is an unofficial extension/profile developed for use with MarcViiew. It i
 For the controlled vocabulary and thesaurus profile, see the
 [MarcViiew Controlled Vocabulary and Thesaurus  Profile](marcviiew-wiiext-profile..md).
 
+**## ViiewLib Integration
+
+<img width="305" height="66" alt="image" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
+
+MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
+
+ViiewLib is a lightweight, portable C library being developed separately to provide the MARC 21 record handling and ISO 2709 functionality required by MarcViiew.
+
+The planned integration will use ViiewLib for:
+
+* MARC 21 record creation and manipulation
+* ISO 2709 encoding
+* ISO 2709 decoding
+* `.mrc` record importing
+* MARC record validation
+* MARC field and subfield access
+* MARC record export
+
+This will allow MarcViiew to keep its Wii-specific catalogue and user-interface code separate from the underlying MARC 21 and ISO 2709 implementation.
+
+The planned data flow is:
+
+```text
+MarcViiew
+    │
+    ├── Catalogue / Wii UI
+    │
+    └── ViiewLib API
+            │
+            ├── MARC 21 records
+            └── ISO 2709 (.mrc)
+```
+
+The MARC importer and encoder are planned to be implemented on top of ViiewLib once the library's API and ISO 2709 functionality have matured.
+
+**ViiewLib:**
+https://github.com/AmandaHJLIS/ViiewLib**
+
 ## Game Metadata
 
 MarcViiew currently uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and provides the metadata used by MarcViiew to identify and describe games.
@@ -94,44 +132,6 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - viiewlib data structures and API
 - .mrc enconder
 - .mrc importer
-
-## ViiewLib Integration
-
-<img width="305" height="66" alt="image" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
-
-MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
-
-ViiewLib is a lightweight, portable C library being developed separately to provide the MARC 21 record handling and ISO 2709 functionality required by MarcViiew.
-
-The planned integration will use ViiewLib for:
-
-* MARC 21 record creation and manipulation
-* ISO 2709 encoding
-* ISO 2709 decoding
-* `.mrc` record importing
-* MARC record validation
-* MARC field and subfield access
-* MARC record export
-
-This will allow MarcViiew to keep its Wii-specific catalogue and user-interface code separate from the underlying MARC 21 and ISO 2709 implementation.
-
-The planned data flow is:
-
-```text
-MarcViiew
-    │
-    ├── Catalogue / Wii UI
-    │
-    └── ViiewLib API
-            │
-            ├── MARC 21 records
-            └── ISO 2709 (.mrc)
-```
-
-The MARC importer and encoder are planned to be implemented on top of ViiewLib once the library's API and ISO 2709 functionality have matured.
-
-**ViiewLib:**
-https://github.com/AmandaHJLIS/ViiewLib
 
 ## Setup
 
