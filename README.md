@@ -95,6 +95,42 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - .mrc enconder
 - .mrc importer
 
+**## ViiewLib Integration
+
+MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
+
+ViiewLib is a lightweight, portable C library being developed separately to provide the MARC 21 record handling and ISO 2709 functionality required by MarcViiew.
+
+The planned integration will use ViiewLib for:
+
+* MARC 21 record creation and manipulation
+* ISO 2709 encoding
+* ISO 2709 decoding
+* `.mrc` record importing
+* MARC record validation
+* MARC field and subfield access
+* MARC record export
+
+This will allow MarcViiew to keep its Wii-specific catalogue and user-interface code separate from the underlying MARC 21 and ISO 2709 implementation.
+
+The planned data flow is:
+
+```text
+MarcViiew
+    │
+    ├── Catalogue / Wii UI
+    │
+    └── ViiewLib API
+            │
+            ├── MARC 21 records
+            └── ISO 2709 (.mrc)
+```
+
+The MARC importer and encoder are planned to be implemented on top of ViiewLib once the library's API and ISO 2709 functionality have matured.
+
+**ViiewLib:**
+https://github.com/AmandaHJLIS/ViiewLib
+
 ## Setup
 
 1. Copy the apps folder contents to the apps folder on the SD card used by your Wii.
