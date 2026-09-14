@@ -91,7 +91,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 ## Planned Features
 
 - Series fields to be filled
-- viiewlib
+- viiewlib data structures and API
 - .mrc enconder
 - .mrc importer
 
