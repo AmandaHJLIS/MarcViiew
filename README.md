@@ -33,7 +33,7 @@ Wiiext is an unofficial extension/profile developed for use with MarcViiew. It i
 For the controlled vocabulary and thesaurus profile, see the
 [MarcViiew Controlled Vocabulary and Thesaurus  Profile](marcviiew-wiiext-profile..md).
 
-**## ViiewLib Integration
+## ViiewLib Integration
 
 <img width="305" height="66" alt="image" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
 
