@@ -97,6 +97,8 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 ## ViiewLib Integration
 
+<img width="305" height="66" alt="image" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
+
 MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
 
 ViiewLib is a lightweight, portable C library being developed separately to provide the MARC 21 record handling and ISO 2709 functionality required by MarcViiew.
