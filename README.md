@@ -95,7 +95,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 - .mrc enconder
 - .mrc importer
 
-**## ViiewLib Integration
+## ViiewLib Integration
 
 MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
 
