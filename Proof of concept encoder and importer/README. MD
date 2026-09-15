@@ -115,59 +115,6 @@ Testing includes functionality such as:
 
 The tests progressed from small ViiewLib smoke tests to more application-specific MARC importing and integration tests.
 
-## Test Data
-
-The real-MARC integration proof-of-concept uses the MarcViiew MARC database file:
-
-```text
-marcviiew_marc.txt
-```
-
-This file contains MarcViiew's text-based MARC 21 metadata representation and is used as input by the integration test.
-
-The test reads MARC data from the file, constructs `MARC_Record` objects using ViiewLib, and exercises the resulting records on Wii hardware.
-
-The general workflow is:
-
-```text
-marcviiew_marc.txt
-        |
-        v
-MarcViiew MARC data
-        |
-        v
-MARC_Record
-        |
-        v
-ViiewLib
-        |
-        v
-ISO 2709 / .mrc
-```
-
-### Providing the Test Data
-
-For the real-MARC integration proof-of-concept, copy the required `marcviiew_marc.txt` file to the root of the Wii SD card:
-
-```text
-sd:/marcviiew_marc.txt
-```
-
-The proof-of-concept expects the file at this location.
-
-The file is **application test data**, not part of the ViiewLib library itself.
-
-If the complete MarcViiew database is not included with a particular source distribution, a suitable test fixture containing the required MARC record(s) must be provided before running the integration test.
-
-### Data Provenance
-
-The MarcViiew MARC database used during development was derived from GameTDB metadata.
-
-The database should therefore be treated separately from the original source code and ViiewLib library. Redistribution of the complete generated database should only be done where the applicable source-data terms permit it.
-
-The proof-of-concept source code does not require the complete database to understand or rebuild the test program itself; the database is runtime test input.
-
-
 ## Hardware Testing
 
 The proof-of-concepts have been tested on real Nintendo Wii hardware.
@@ -231,3 +178,4 @@ The **Historical** proof-of-concepts represent earlier stages of development and
 They should not be considered production components of MarcViiew.
 
 The source code is provided so that the tests can be rebuilt and reproduced rather than relying solely on precompiled Wii binaries.
+
