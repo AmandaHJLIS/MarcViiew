@@ -1,50 +1,54 @@
-MarcViiew Wii Proof-of-Concept Tests
+# MarcViiew Wii Proof-of-Concept Tests
 
-This directory contains standalone Nintendo Wii homebrew proof-of-concept programs created during the development of MarcViiew and its integration with ViiewLib.
+This directory contains standalone Nintendo Wii homebrew proof-of-concept programs created during the development of **MarcViiew** and its integration with **ViiewLib**.
 
 These programs were used to test MARC 21 record handling, ISO 2709 encoding and decoding, MARC importing, and ViiewLib integration on Wii hardware.
 
 The proof-of-concepts are separate from the main MarcViiew application and are intended for development, testing, and demonstration.
 
-Directory Structure
+## Directory Structure
 
 The proof-of-concept programs are divided into two categories.
 
-Active
+### Active
 
 Contains the current proof-of-concept used for ongoing MarcViiew and ViiewLib integration testing.
 
-Historical
+### Historical
 
 Contains earlier proof-of-concept programs that have been superseded by later tests.
 
 The historical programs are retained for development history and reference. They are not part of the current active testing workflow.
 
-Requirements
+## Requirements
 
 Building the Wii proof-of-concepts requires:
 
-devkitPro
-devkitPPC
-libogc
-ViiewLib
-A Nintendo Wii capable of running homebrew for hardware testing
+* [devkitPro](https://devkitpro.org/)
+* devkitPPC
+* libogc
+* **ViiewLib**
+* A Nintendo Wii capable of running homebrew for hardware testing
 
 The required devkitPro components must be installed and available through the development environment.
 
-ViiewLib
+## ViiewLib
 
-The MARC 21 and ISO 2709 proof-of-concepts use ViiewLib as their MARC/ISO 2709 library.
+The MARC 21 and ISO 2709 proof-of-concepts use **ViiewLib** as their MARC/ISO 2709 library.
 
 ViiewLib must therefore be built for Wii before building a proof-of-concept that links against it.
 
 From the ViiewLib repository:
 
+```bash
 make -f Makefile.wii
+```
 
 This builds the Wii static library:
 
+```text
 libviiewlib_wii.a
+```
 
 The proof-of-concept Makefile links against this Wii build of ViiewLib.
 
@@ -52,77 +56,139 @@ ViiewLib is available here:
 
 https://github.com/AmandaHJLIS/Viiewlib
 
-Building
+## Building
 
 After ViiewLib has been built, navigate to the desired proof-of-concept directory.
 
 Run:
 
+```bash
 make
+```
 
 A successful build produces a Wii executable:
 
+```text
 boot.dol
+```
 
 Depending on the individual proof-of-concept, additional development files such as an ELF executable or linker map may also be produced.
 
 Generated build artifacts are not required to be committed to the source repository.
 
-Installing on Wii
+## Test Data
+
+The real-MARC integration proof-of-concept uses the MarcViiew MARC database file:
+
+```text
+marcviiew_marc.txt
+```
+
+This file contains MarcViiew's text-based MARC 21 metadata representation and is used as input by the integration test.
+
+The test reads MARC data from the file, constructs `MARC_Record` objects using ViiewLib, and exercises the resulting records on Wii hardware.
+
+The general workflow is:
+
+```text
+marcviiew_marc.txt
+        |
+        v
+MarcViiew MARC data
+        |
+        v
+MARC_Record
+        |
+        v
+ViiewLib
+        |
+        v
+ISO 2709 / .mrc
+```
+
+### Providing the Test Data
+
+For the real-MARC integration proof-of-concept, copy the required `marcviiew_marc.txt` file to the root of the Wii SD card:
+
+```text
+sd:/marcviiew_marc.txt
+```
+
+The proof-of-concept expects the file at this location.
+
+The file is **application test data**, not part of the ViiewLib library itself.
+
+If the complete MarcViiew database is not included with a particular source distribution, a suitable test fixture containing the required MARC record(s) must be provided before running the integration test.
+
+### Data Provenance
+
+The MarcViiew MARC database used during development was derived from GameTDB metadata.
+
+The database should therefore be treated separately from the original source code and ViiewLib library. Redistribution of the complete generated database should only be done where the applicable source-data terms permit it.
+
+The proof-of-concept source code does not require the complete database to understand or rebuild the test program itself; the database is runtime test input.
+
+
+## Installing on Wii
 
 For testing with the Homebrew Channel, create an application directory on the Wii SD card:
 
+```text
 sd:/apps/<test-name>/
+```
 
-Copy the generated boot.dol into the directory.
+Copy the generated `boot.dol` into the directory.
 
-If the proof-of-concept includes a meta.xml and icon, these should also be copied into the same directory:
+If the proof-of-concept includes a `meta.xml` and icon, these should also be copied into the same directory:
 
+```text
 sd:/apps/<test-name>/
 ├── boot.dol
 ├── meta.xml
 └── icon.png
+```
 
 The proof-of-concept can then be launched through the Homebrew Channel.
 
-What These Tests Demonstrate
+## What These Tests Demonstrate
 
 The proof-of-concepts were developed to verify that ViiewLib could be used from a Wii application compiled with devkitPPC.
 
 Testing includes functionality such as:
 
-Creating MARC 21 records
-Adding control fields
-Creating variable fields
-Adding indicators and subfields
-Writing ISO 2709 records
-Reading ISO 2709 records
-Verifying MARC 21 data after round-trip encoding/decoding
-Importing MARC data into MarcViiew
-Using ViiewLib from a Wii homebrew application
+* Creating MARC 21 records
+* Adding control fields
+* Creating variable fields
+* Adding indicators and subfields
+* Writing ISO 2709 records
+* Reading ISO 2709 records
+* Verifying MARC 21 data after round-trip encoding/decoding
+* Importing MARC data into MarcViiew
+* Using ViiewLib from a Wii homebrew application
 
 The tests progressed from small ViiewLib smoke tests to more application-specific MARC importing and integration tests.
 
-Hardware Testing
+## Hardware Testing
 
 The proof-of-concepts have been tested on real Nintendo Wii hardware.
 
 Hardware testing was used to verify functionality that cannot necessarily be established by a successful desktop or emulator build alone, including:
 
-Wii filesystem access
-SD card access
-devkitPPC linking
-ViiewLib integration
-MARC 21 record handling
-ISO 2709 reading and writing
-MARC data importing
+* Wii filesystem access
+* SD card access
+* devkitPPC linking
+* ViiewLib integration
+* MARC 21 record handling
+* ISO 2709 reading and writing
+* MARC data importing
 
 A successful compilation should not be interpreted as equivalent to successful hardware testing.
 
-Development Relationship
+## Development Relationship
 
 The general development architecture is:
 
+```text
                 ViiewLib
                    |
           MARC 21 / ISO 2709
@@ -132,9 +198,11 @@ The general development architecture is:
                    |
                    v
               Wii hardware
+```
 
 The intended application-level workflow is:
 
+```text
 MARC data
    |
    v
@@ -148,17 +216,19 @@ ViiewLib
    |
    v
 ISO 2709 (.mrc)
+```
 
 These proof-of-concepts were created to validate this integration before incorporating the functionality into the main MarcViiew application.
 
-Status
+## Status
 
 The proof-of-concept programs are experimental development tools.
 
-The Active proof-of-concept represents the current development and testing path.
+The **Active** proof-of-concept represents the current development and testing path.
 
-The Historical proof-of-concepts represent earlier stages of development and are retained for reference.
+The **Historical** proof-of-concepts represent earlier stages of development and are retained for reference.
 
 They should not be considered production components of MarcViiew.
 
 The source code is provided so that the tests can be rebuilt and reproduced rather than relying solely on precompiled Wii binaries.
+
