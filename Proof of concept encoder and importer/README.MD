@@ -24,10 +24,10 @@ The historical programs are retained for development history and reference. They
 
 Building the Wii proof-of-concepts requires:
 
-* [devkitPro](https://devkitpro.org/)
+* devkitpro
 * devkitPPC
 * libogc
-* **ViiewLib**
+* ViiewLib
 * A Nintendo Wii capable of running homebrew for hardware testing
 
 The required devkitPro components must be installed and available through the development environment.
