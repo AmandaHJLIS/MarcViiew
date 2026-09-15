@@ -1,4 +1,6 @@
-<img width="370" height="67" alt="21d000b48fc0ec2adb4efcf95f6ebed8" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
+# MarcViiew
+
+<img width="370" height="67" alt="MarcViiew logo" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
 
 MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
 
@@ -6,11 +8,11 @@ MarcViiew combines Wii game detection with library and information science princ
 
 The project is designed with libraries, librarians, library technicians, and library and information science students in mind. It explores how established library cataloguing standards and controlled vocabularies can be applied to video game collections within a Wii homebrew environment.
 
-<img width="526" height="218.5" alt="image" src="https://github.com/user-attachments/assets/3495ca94-d0d8-4442-bed4-fc87754e3072" />
+<img width="526" height="218.5" alt="MarcViiew screenshot" src="https://github.com/user-attachments/assets/3495ca94-d0d8-4442-bed4-fc87754e3072" />
 
 ## MARC 21
 
-<img width="500" height="108" alt="image" src="https://github.com/user-attachments/assets/11d4aa98-af50-4a5e-9f29-7e3c70fe9637" />
+<img width="500" height="108" alt="MARC 21" src="https://github.com/user-attachments/assets/11d4aa98-af50-4a5e-9f29-7e3c70fe9637" />
 
 MarcViiew uses the MARC 21 bibliographic format as the basis for its cataloguing and MARC record functionality.
 
@@ -18,11 +20,11 @@ MARC 21 is maintained by the Library of Congress Network Development and MARC St
 
 For authoritative documentation and current field definitions, please refer to the MARC 21 Format for Bibliographic Data provided by the Library of Congress.
 
-For Marcviiew authoritative documentation and current field definitions, please refer to [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
+For MarcViiew's project-specific MARC usage and field definitions, see the [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
 
 ## Wiiext
 
-<img width="289" height="`102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
+<img width="289" height="102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
 
 Wiiext is a controlled vocabulary and thesaurus developed specifically for describing Wii video games and related software.
 
@@ -30,45 +32,52 @@ MarcViiew uses Wiiext terms to provide consistent genre and form classification 
 
 Wiiext is an unofficial extension/profile developed for use with MarcViiew. It is not an official Library of Congress extension, vocabulary, or standard, and is not endorsed or maintained by the Library of Congress.
 
-For the controlled vocabulary and thesaurus profile, see the
-[MarcViiew Controlled Vocabulary and Thesaurus  Profile](marcviiew-wiiext-profile..md).
+For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controlled Vocabulary and Thesaurus Profile](marcviiew-wiiext-profile.md).
 
 ## ViiewLib Integration
 
-<img width="305" height="66" alt="image" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
+<img width="305" height="66" alt="ViiewLib" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
 
-MarcViiew is planned to use **ViiewLib** as its MARC 21 and ISO 2709 library.
+MarcViiew uses **ViiewLib**, a lightweight C library developed separately for MARC 21 record handling and ISO 2709 encoding and decoding.
 
-ViiewLib is a lightweight, portable C library being developed separately to provide the MARC 21 record handling and ISO 2709 functionality required by MarcViiew.
+ViiewLib provides the underlying MARC 21 and ISO 2709 functionality used by MarcViiew while allowing the Wii-specific catalogue and user-interface code to remain separate from the MARC implementation.
 
-The planned integration will use ViiewLib for:
+Current integration includes:
 
 * MARC 21 record creation and manipulation
-* ISO 2709 encoding
-* ISO 2709 decoding
-* `.mrc` record importing
-* MARC record validation
-* MARC field and subfield access
-* MARC record export
+* Control fields, variable fields, indicators, and subfields
+* Repeated MARC fields with preserved field order
+* MARC 21 field lookup
+* ISO 2709 encoding and decoding
+* MARC 21 ↔ ISO 2709 round-trip support
+* Validation of malformed and truncated ISO 2709 records
+* Encoding of the MarcViiew MARC database into `.mrc` files
+* Encoding of individual game records into separate `.mrc` files
+* devkitPPC/Wii integration
+* MARC 21 and ISO 2709 hardware testing on Nintendo Wii
 
-This will allow MarcViiew to keep its Wii-specific catalogue and user-interface code separate from the underlying MARC 21 and ISO 2709 implementation.
-
-The planned data flow is:
+The current data flow is:
 
 ```text
-MarcViiew
-    │
-    ├── Catalogue / Wii UI
-    │
-    └── ViiewLib API
-            │
-            ├── MARC 21 records
-            └── ISO 2709 (.mrc)
+MarcViiew MARC database
+        │
+        ▼
+MarcViiew text parser
+        │
+        ▼
+    ViiewLib API
+        │
+        ├── MARC 21 records
+        │
+        └── ISO 2709 (.mrc)
 ```
 
-The MARC importer and encoder are planned to be implemented on top of ViiewLib once the library's API and ISO 2709 functionality have matured.
+The `.mrc` files generated by MarcViiew are export/ISO 2709 files. The local `marcviiew_marc.txt` database remains the source used by MarcViiew's normal MARC record viewer and MARC21 search functionality.
+
+ViiewLib remains under active development and does not currently claim complete MARC 21 or ISO 2709 standards conformance or production readiness.
 
 **ViiewLib:**
+
 https://github.com/AmandaHJLIS/ViiewLib
 
 ## Game Metadata
@@ -81,79 +90,112 @@ MarcViiew's GameTDB-derived database is currently a work in progress and may be 
 
 ## MarcViiew Cataloguing Rules
 
-MarcViiew uses the MARC 21 bibliographic format as the foundation for its cataloguing system. Where source metadata requires normalisation or adaptation for use within MarcViiew, project-specific cataloguing conventions may be applied.
+MarcViiew uses the MARC 21 bibliographic format as the foundation of its cataloguing system. Where source metadata requires normalisation or adaptation for use within MarcViiew, project-specific cataloguing conventions may be applied.
 
 These conventions are intended to provide consistent representation of video game metadata within MarcViiew and do not replace the official MARC 21 standards.
 
 ### Metadata
-- GameTDB is currently used as the primary source for game metadata.
-- Wii Game IDs are used as the primary identifier for games.
-- Dates supplied by GameTDB are normalised to YYYY-MM-DD.
-- Publisher and developer information is retained from the source metadata.
-- GameTDB genre terms are mapped to preferred Wiiext terms where an appropriate term exists.
+
+* GameTDB is currently used as the primary source for game metadata.
+* Wii Game IDs are used as the primary identifier for games.
+* Dates supplied by GameTDB are normalised to YYYY-MM-DD.
+* Publisher and developer information is retained from the source metadata.
+* GameTDB genre terms are mapped to preferred Wiiext terms where an appropriate term exists.
 
 ### MARC 21
-- 001 contains the Wii Game ID.
-- 245 contains the game title.
-- Non-filing characters are accounted for in the 245 second indicator.
-- 264 contains publication/distribution information and the release date used by MarcViiew.
-- 300 describes the physical Wii disc.
-- 500 contains the game synopsis.
-- 542 contains selected metadata provenance information.
-- 655 contains Wiiext genre/form terms.
-- 655 $2 identifies Wiiext as the source vocabulary.
 
-For the complete field definitions and usage rules, see the
-[MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
+* `001` contains the Wii Game ID.
+* `245` contains the game title.
+* Non-filing characters are accounted for in the 245 second indicator.
+* `264` contains publication/distribution information and the release date used by MarcViiew.
+* `300` describes the physical Wii disc.
+* `500` contains the game synopsis.
+* `542` contains selected metadata provenance information.
+* `655` contains Wiiext genre/form terms.
+* `655 $2` identifies Wiiext as the source vocabulary.
+
+For the complete field definitions and usage rules, see the [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
 
 These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Current Features
 
-- Detects Wii games stored on a USB device and SD card
-- Identifies games using their Wii Game ID
-- Matches games against the MarcViiew database
-- Displays game metadata
-- Displays game synopses
-- Scrollable game information
-- Nintendo Wii Homebrew Channel support
-- Classic controller support
-- Search bar for locating games
-- MARC 21 record viewing
-- Additional cataloguing metadata
-- Controlled vocabulary/thesaurus 'Wiiext'
-- Marcviiew game database generated from GameTDB data.
-- Search for either MARC21 or normal game records with the search option.
-- The option to reload the USB ports/SD card and databases
+* Detects Wii games stored on USB and SD devices
+* Identifies games using their Wii Game ID
+* Matches games against the MarcViiew database
+* Displays game metadata
+* Displays game synopses
+* Scrollable game information
+* Nintendo Wii Homebrew Channel support
+* Classic Controller support
+* Search functionality for locating games
+* MARC 21 record viewing
+* MARC 21 search functionality
+* Additional cataloguing metadata
+* Controlled vocabulary and thesaurus support through Wiiext
+* MarcViiew game database generated from GameTDB data
+* Normal game record and MARC21 search modes
+* Database and storage-device reload functionality
+* MARC 21 text-database parsing
+* ISO 2709 `.mrc` encoding
+* Encoding of individual game records to `.mrc`
+* ViiewLib MARC 21 and ISO 2709 integration
 
 ## Planned Features
 
-- Series fields to be filled
-- viiewlib data structures and API
-- .mrc enconder
-- .mrc importer
+MarcViiew remains under active development. Planned features include:
+
+* MARC 21 `.mrc` importer
+* Importing external ISO 2709/MARC 21 records into MarcViiew
+* Improved interoperability with externally generated MARC 21 data
+* Additional MARC 21 validation and standards coverage
+* Further ISO 2709 compatibility testing
+* Continued ViiewLib API refinement and documentation
+* Additional ViiewLib portability testing
+* Further Wii performance and memory optimisation
+* Continued refinement of the MarcViiew catalogue and user interface
+* Additional catalogue and MARC search functionality
+
+Planned features may change as development continues.
+
+## Beta Status
+
+MarcViiew is currently in **beta development**.
+
+The current release contains functional MARC 21 and ISO 2709 support through ViiewLib, including `.mrc` encoding and Wii hardware testing.
+
+However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
 
 ## Setup
 
-1. Copy the apps folder contents to the apps folder on the SD card used by your Wii.
-The application should be located at:
-SD:/apps/marcviiew/
+1. Copy the contents of the `apps` folder to the `apps` folder on the SD card used by your Wii.
 
-2. Copy marcviiew_games.txt and marcviiew_marc.txt to the root of the SD card:
-SD:/marcviiew_games.txt SD:/marcviiew_marc.txt
+   The application should be located at:
+
+   ```text
+   sd:/apps/marcviiew/
+   ```
+
+2. Copy the following database files to the root of the SD card:
+
+   ```text
+   sd:/marcviiew_games.txt
+   sd:/marcviiew_marc.txt
+   ```
 
 3. Connect the USB storage device containing your Wii games.
+
 4. Open the Homebrew Channel and launch MarcViiew.
 
 ## Note
 
-MarcViiew remains a work in progress. The current release focuses on establishing the core catalogue, metadata and MARC 21 functionality.
+MarcViiew remains a work in progress. The current release focuses on establishing a functional Wii catalogue, metadata, MARC 21, and ISO 2709 workflow.
 
 MarcViiew field definitions and Wiiext may not be compatible with your LMS. Please refer to your LMS procedures for configuration.
 
 ## License
 
-This project is licensed under the MIT License. See the (LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 The MIT License applies to MarcViiew's original source code; third-party data and resources remain subject to their respective terms.
 
