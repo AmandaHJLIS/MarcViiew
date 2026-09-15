@@ -69,7 +69,7 @@ MarcViiew
 The MARC importer and encoder are planned to be implemented on top of ViiewLib once the library's API and ISO 2709 functionality have matured.
 
 **ViiewLib:**
-https://github.com/AmandaHJLIS/ViiewLib**
+https://github.com/AmandaHJLIS/ViiewLib
 
 ## Game Metadata
 
