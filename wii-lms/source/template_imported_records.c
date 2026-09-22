@@ -557,12 +557,12 @@ static int imported_get_id(const char *filename, char *id) {
     if (!filename || !id || strncmp(filename,p,10)!=0) return 0;
     dot=strrchr(filename,'.'); if(!dot) return 0;
     n=(size_t)(dot-(filename+10)); if(n!=6) return 0;
-    memcpy(id,filename+10,6); id[6]='\\0'; return 1;
+    memcpy(id,filename+10,6); id[6]='\0'; return 1;
 }
 static int imported_subfield(MARC_Field *f,char code,char *out,size_t size) {
     size_t i,n; MARC_Subfield *s; const char *v;
     if(!f||!out||!size) return 0; n=marc_field_get_subfield_count(f);
-    for(i=0;i<n;i++){ s=marc_field_get_subfield(f,i); if(s&&marc_subfield_get_code(s)==code){v=marc_subfield_get_value(s); if(!v)return 0; strncpy(out,v,size-1);out[size-1]='\\0';return 1;}}
+    for(i=0;i<n;i++){ s=marc_field_get_subfield(f,i); if(s&&marc_subfield_get_code(s)==code){v=marc_subfield_get_value(s); if(!v)return 0; strncpy(out,v,size-1);out[size-1]='\0';return 1;}}
     return 0;
 }
 static int imported_load(const char *path,const char *filename,ImportedRecord *out) {
@@ -2563,7 +2563,7 @@ void show_marc_record() {
 */
 
 void show_imported_menu(void){
-    int i; printf("\\x1b[2J\\x1b[H"); print_ui_line('='); print_centered("Imported Records"); print_ui_line('='); printf("\\n");
+    int i; printf("\x1b[2J\x1b[H"); print_ui_line('='); print_centered("Imported Records"); print_ui_line('='); printf("\\n");
     if(imported_record_count==0){print_centered("No imported records found.");printf("\\n");print_centered("Place .mrc files in:");print_centered("sd:/marcviiew_import");printf("\\n");print_centered("B = Back");return;}
     for(i=0;i<imported_record_count;i++) print_menu_item(imported_records[i].title,i==imported_selection);
     printf("\\n"); {char line[80];snprintf(line,sizeof(line),"%d imported record(s).",imported_record_count);print_centered(line);} printf("\\n");print_centered("UP / DOWN = Move");print_centered("A = View Record");print_centered("B = Back");
