@@ -2609,81 +2609,15 @@ void show_imported_record(void)
             imported_records[imported_selection].game_id
         );
 
-    snprintf(
-        path,
-        sizeof(path),
-        "sd:/marcviiew/imported/%s",
-        imported_records[imported_selection].filename
-    );
-
-    file = fopen(path, "rb");
-
-    if (file == NULL)
+    /*
+     * The MARC record is loaded once when the viewer is entered.
+     *
+     * Keeping it in loaded_marc_record means UP/DOWN scrolling
+     * only redraws the already parsed record instead of opening
+     * and parsing the .mrc file again on every frame.
+     */
+    if (loaded_marc_record == NULL)
     {
-        snprintf(
-            incoming_path,
-            sizeof(incoming_path),
-            "sd:/marcviiew_import/%s",
-            imported_records[imported_selection].filename
-        );
-
-        file = fopen(
-            incoming_path,
-            "rb"
-        );
-
-        if (file != NULL)
-            incoming = 1;
-    }
-
-    if (file == NULL)
-    {
-        print_centered(
-            "Imported .mrc file could not be opened."
-        );
-
-        printf("\n");
-        print_centered("B = Back");
-        return;
-    }
-
-    record = read_mrc_record(file);
-
-    fclose(file);
-
-    if (record == NULL)
-    {
-        print_centered(
-            "Could not read imported MARC record."
-        );
-
-        printf("\n");
-        print_centered(
-            "The file is not a readable ISO 2709"
-        );
-        print_centered(
-            "MARC record for ViiewLib."
-        );
-
-        printf("\n");
-        print_centered("B = Back");
-        return;
-    }
-
-    imported_update_metadata_from_record(
-        &imported_records[imported_selection],
-        record
-    );
-
-    if (incoming)
-    {
-        snprintf(
-            incoming_path,
-            sizeof(incoming_path),
-            "sd:/marcviiew_import/%s",
-            imported_records[imported_selection].filename
-        );
-
         snprintf(
             path,
             sizeof(path),
@@ -2691,11 +2625,91 @@ void show_imported_record(void)
             imported_records[imported_selection].filename
         );
 
-        rename(
-            incoming_path,
-            path
+        file = fopen(path, "rb");
+
+        if (file == NULL)
+        {
+            snprintf(
+                incoming_path,
+                sizeof(incoming_path),
+                "sd:/marcviiew_import/%s",
+                imported_records[imported_selection].filename
+            );
+
+            file = fopen(
+                incoming_path,
+                "rb"
+            );
+
+            if (file != NULL)
+                incoming = 1;
+        }
+
+        if (file == NULL)
+        {
+            print_centered(
+                "Imported .mrc file could not be opened."
+            );
+
+            printf("\n");
+            print_centered("B = Back");
+            return;
+        }
+
+        record = read_mrc_record(file);
+
+        fclose(file);
+
+        if (record == NULL)
+        {
+            print_centered(
+                "Could not read imported MARC record."
+            );
+
+            printf("\n");
+            print_centered(
+                "The file is not a readable ISO 2709"
+            );
+            print_centered(
+                "MARC record for ViiewLib."
+            );
+
+            printf("\n");
+            print_centered("B = Back");
+            return;
+        }
+
+        loaded_marc_record = record;
+
+        imported_update_metadata_from_record(
+            &imported_records[imported_selection],
+            loaded_marc_record
         );
+
+        if (incoming)
+        {
+            snprintf(
+                incoming_path,
+                sizeof(incoming_path),
+                "sd:/marcviiew_import/%s",
+                imported_records[imported_selection].filename
+            );
+
+            snprintf(
+                path,
+                sizeof(path),
+                "sd:/marcviiew/imported/%s",
+                imported_records[imported_selection].filename
+            );
+
+            rename(
+                incoming_path,
+                path
+            );
+        }
     }
+
+    record = loaded_marc_record;
 
     print_label_value(
         "Title: ",
@@ -2723,8 +2737,6 @@ void show_imported_record(void)
     render_marc_record(
         record
     );
-
-    marc_record_free(record);
 
     {
         int visible_lines = 12;
@@ -4653,12 +4665,19 @@ int main(void)
     );
 
     scan_catalogue();
+
+
+    show_loading_screen(
+        "Loading imported MARC records...",
+        65
+    );
+
     scan_imported_records();
 
 
     show_loading_screen(
         "Loading game metadata...",
-        70
+        80
     );
 
     usleep(
@@ -4831,7 +4850,23 @@ int main(void)
             {
                 if (imported_record_count > 0)
                 {
+                    /*
+                     * Release any record from another viewer before
+                     * loading the selected imported .mrc.
+                     */
+                    if (loaded_marc_record != NULL)
+                    {
+                        marc_record_free(loaded_marc_record);
+                        loaded_marc_record = NULL;
+                    }
+
                     imported_scroll = 0;
+
+                    show_loading_screen(
+                        "Loading imported MARC record...",
+                        50
+                    );
+
                     screen = 14;
                     show_imported_record();
                 }
