@@ -65,7 +65,9 @@ template.o: C:/Users/docte/wii-lms/source/template.c \
  C:/devkitPro/libogc/include/wiiuse/wiiuse.h \
  C:/devkitPro/libogc/include/bte/bte.h \
  C:/devkitPro/libogc/include/bte/bd_addr.h \
- C:/devkitPro/libogc/include/fat.h C:/devkitPro/libogc/include/dvm.h
+ C:/devkitPro/libogc/include/fat.h C:/devkitPro/libogc/include/dvm.h \
+ C:/Users/docte/viiewlib/include/viiewlib/marc.h \
+ C:/Users/docte/wii-lms/include/marc_encoder.h
 C:/devkitPro/libogc/include/gccore.h:
 C:/devkitPro/libogc/include/ogc/dsp.h:
 C:/devkitPro/libogc/include/gctypes.h:
@@ -134,3 +136,5 @@ C:/devkitPro/libogc/include/bte/bte.h:
 C:/devkitPro/libogc/include/bte/bd_addr.h:
 C:/devkitPro/libogc/include/fat.h:
 C:/devkitPro/libogc/include/dvm.h:
+C:/Users/docte/viiewlib/include/viiewlib/marc.h:
+C:/Users/docte/wii-lms/include/marc_encoder.h:
