@@ -146,6 +146,8 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 MarcViiew remains under active development. Planned features include:
 
+* Clamp the cursor so it doesn't go beyond the valid records.
+* Add a scroll offset so when the cursor reaches the bottom of the visible area, the list moves upward.
 * Automatic management of imported .mrc files, including removing successfully imported files from the temporary marcviiew_import directory while retaining them in marcviiew/imported/.
 * Importing external ISO 2709/MARC 21 records into MarcViiew
 * Improved interoperability with externally generated MARC 21 data
