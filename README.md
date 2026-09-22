@@ -146,6 +146,7 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 MarcViiew remains under active development. Planned features include:
 
+* Automatic management of imported .mrc files, including removing successfully imported files from the temporary marcviiew_import directory while retaining them in marcviiew/imported/.
 * Importing external ISO 2709/MARC 21 records into MarcViiew
 * Improved interoperability with externally generated MARC 21 data
 * Additional MARC 21 validation and standards coverage
