@@ -140,12 +140,12 @@ These conventions may change as MarcViiew's cataloguing model develops.
 * ISO 2709 `.mrc` encoding
 * Encoding of individual game records to `.mrc`
 * ViiewLib MARC 21 and ISO 2709 integration
+* MARC 21 `.mrc` importer
 
 ## Planned Features
 
 MarcViiew remains under active development. Planned features include:
 
-* MARC 21 `.mrc` importer
 * Importing external ISO 2709/MARC 21 records into MarcViiew
 * Improved interoperability with externally generated MARC 21 data
 * Additional MARC 21 validation and standards coverage
