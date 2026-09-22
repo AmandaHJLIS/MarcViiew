@@ -13,6 +13,7 @@
 #include <viiewlib/marc.h>
 
 #include "marc_encoder.h"
+#include "marc_text_parser.h"
 
 #define MAX_GAMES 100
 #define MAX_SEARCH_RESULTS 100
@@ -388,6 +389,8 @@ static int imported_record_count = 0;
 static int imported_selection = 0;
 static int imported_scroll = 0;
 
+static MARC_Record *loaded_marc_record = NULL;
+
 static int imported_get_id(const char *filename, char *id)
 {
     const char *dot;
@@ -469,7 +472,6 @@ static int imported_exists(const ImportedRecord *record)
 
     return 0;
 }
-
 static void imported_add_filename(const char *filename)
 {
     ImportedRecord record;
@@ -483,7 +485,11 @@ static void imported_add_filename(const char *filename)
     if (!imported_get_id(filename, record.game_id))
         return;
 
-    strncpy(record.filename, filename, sizeof(record.filename) - 1);
+    strncpy(
+        record.filename,
+        filename,
+        sizeof(record.filename) - 1
+    );
 
     snprintf(
         record.title,
@@ -492,13 +498,25 @@ static void imported_add_filename(const char *filename)
         record.game_id
     );
 
-    strcpy(record.marc_001, "(not loaded)");
+    strcpy(
+        record.marc_001,
+        "(not loaded)"
+    );
 
-    if (!imported_exists(&record))
-    {
-        imported_records[imported_record_count] = record;
-        imported_record_count++;
-    }
+    if (imported_exists(&record))
+        return;
+
+    imported_records[
+        imported_record_count
+    ] = record;
+
+    imported_load_metadata(
+        &imported_records[
+            imported_record_count
+        ]
+    );
+
+    imported_record_count++;
 }
 
 static void imported_scan_directory(const char *directory)
@@ -1635,6 +1653,235 @@ void add_marc_wrapped_subfield(
         );
     }
 }
+static void render_marc_record(MARC_Record *record)
+{
+    size_t i;
+
+    marc_line_count = 0;
+
+    if (record == NULL)
+        return;
+
+    {
+        const char *leader = marc_record_get_leader(record);
+
+        if (leader != NULL)
+        {
+            char line[MARC_LINE_LENGTH];
+
+            snprintf(line, sizeof(line), "LDR %s", leader);
+            add_marc_line(line);
+        }
+    }
+
+    for (i = 0; i < marc_record_get_field_count(record); ++i)
+    {
+        MARC_Field *field = marc_record_get_field(record, i);
+        const char *tag;
+
+        if (field == NULL)
+            continue;
+
+        tag = marc_field_get_tag(field);
+
+        if (tag == NULL)
+            continue;
+
+        if (marc_field_is_control_field(field))
+        {
+            const char *value =
+                marc_field_get_control_value(field);
+            char line[MARC_LINE_LENGTH];
+
+            if (value == NULL)
+                value = "";
+
+            snprintf(
+                line,
+                sizeof(line),
+                "%s %s",
+                tag,
+                value
+            );
+
+            add_marc_line(line);
+        }
+        else
+        {
+            char header[MARC_LINE_LENGTH];
+            size_t j;
+            size_t subfield_count =
+                marc_field_get_subfield_count(field);
+
+            snprintf(
+                header,
+                sizeof(header),
+                "%s %c%c",
+                tag,
+                marc_field_get_indicator1(field),
+                marc_field_get_indicator2(field)
+            );
+
+            add_marc_line(header);
+
+            for (j = 0; j < subfield_count; ++j)
+            {
+                MARC_Subfield *subfield =
+                    marc_field_get_subfield(field, j);
+                const char *value;
+                char prefix[16];
+
+                if (subfield == NULL)
+                    continue;
+
+                value = marc_subfield_get_value(subfield);
+
+                if (value == NULL)
+                    value = "";
+
+                snprintf(
+                    prefix,
+                    sizeof(prefix),
+                    "  $%c ",
+                    marc_subfield_get_code(subfield)
+                );
+
+                add_marc_wrapped_subfield(
+                    prefix,
+                    value
+                );
+            }
+        }
+    }
+}
+
+
+static MARC_Record *read_mrc_record(FILE *file)
+{
+    MARC_Record *record;
+
+    if (file == NULL)
+        return NULL;
+
+    record = marc_record_create();
+
+    if (record == NULL)
+        return NULL;
+
+    if (marc_record_read(record, file) != 0)
+    {
+        marc_record_free(record);
+        return NULL;
+    }
+
+    return record;
+}
+
+
+static void imported_update_metadata_from_record(
+    ImportedRecord *imported,
+    MARC_Record *record
+)
+{
+    MARC_Field *field;
+
+    if (imported == NULL || record == NULL)
+        return;
+
+    field = marc_record_get_field_by_tag(record, "245");
+
+    if (field != NULL)
+    {
+        imported_subfield(
+            field,
+            'a',
+            imported->title,
+            sizeof(imported->title)
+        );
+    }
+
+    field = marc_record_get_field_by_tag(record, "001");
+
+    if (field != NULL)
+    {
+        const char *value =
+            marc_field_get_control_value(field);
+
+        if (value != NULL && value[0] != '\0')
+        {
+            strncpy(
+                imported->marc_001,
+                value,
+                sizeof(imported->marc_001) - 1
+            );
+
+            imported->marc_001[
+                sizeof(imported->marc_001) - 1
+            ] = '\0';
+        }
+    }
+}
+
+
+static int imported_load_metadata(
+    ImportedRecord *imported
+)
+{
+    char path[256];
+    FILE *file;
+    MARC_Record *record;
+
+    if (imported == NULL)
+        return -1;
+
+    snprintf(
+        path,
+        sizeof(path),
+        "sd:/marcviiew/imported/%s",
+        imported->filename
+    );
+
+    file = fopen(path, "rb");
+
+    if (file == NULL)
+    {
+        snprintf(
+            path,
+            sizeof(path),
+            "sd:/marcviiew_import/%s",
+            imported->filename
+        );
+
+        file = fopen(path, "rb");
+    }
+
+    if (file == NULL)
+        return -2;
+
+    record = read_mrc_record(file);
+
+    fclose(file);
+
+    if (record == NULL)
+    {
+        strcpy(
+            imported->marc_001,
+            "(read error)"
+        );
+
+        return -1;
+    }
+
+    imported_update_metadata_from_record(
+        imported,
+        record
+    );
+
+    marc_record_free(record);
+
+    return 0;
+}
+
 
 
 /*
@@ -1659,422 +1906,99 @@ void add_marc_wrapped_subfield(
 
     and the complete corresponding MARC record is
     rendered on the MARC viewer screen.
-*/
-int load_marc_record() {
-
+*/int load_marc_record()
+{
     FILE *marc_file;
+    MarcViiewParser parser;
+    MARC_Record *record = NULL;
+    int result;
 
-    char line[
-        DATABASE_LINE_LENGTH
-    ];
-
-    char target_id[7];
-
-    int in_record = 0;
-    int matching_record = 0;
-
-    int current_field = 0;
-
-
-    marc_line_count = 0;
-
-
-    if (
-        game_count == 0
-    )
-        return 0;
-
-
-    if (
-        marc_selection < 0 ||
-        marc_selection >= game_count
-    )
-        return 0;
-
-
-    strcpy(
-        target_id,
-        games[
-            marc_selection
-        ].id
-    );
-
-
-    marc_file =
-        fopen(
-            "sd:/marcviiew_marc.txt",
-            "r"
+    if (loaded_marc_record != NULL)
+    {
+        marc_record_free(
+            loaded_marc_record
         );
 
-
-    if (
-        marc_file == NULL
-    )
-        return -1;
-
-
-    while (
-        fgets(
-            line,
-            sizeof(line),
-            marc_file
-        ) != NULL
-    ) {
-
-        line[
-            strcspn(
-                line,
-                "\r\n"
-            )
-        ] = '\0';
-
-
-        /*
-            A new [RECORD] starts a new MARC record.
-        */
-        if (
-            strcmp(
-                line,
-                "[RECORD]"
-            ) == 0
-        ) {
-
-            in_record = 1;
-            matching_record = 0;
-            current_field = 0;
-
-            continue;
-        }
-
-
-        if (
-            !in_record
-        )
-            continue;
-
-
-        /*
-            GAME_ID identifies the application-level
-            record corresponding to the Wii game.
-        */
-        if (
-            strncmp(
-                line,
-                "GAME_ID=",
-                8
-            ) == 0
-        ) {
-
-            if (
-                strcmp(
-                    line + 8,
-                    target_id
-                ) == 0
-            ) {
-
-                matching_record = 1;
-
-            } else {
-
-                matching_record = 0;
-            }
-
-            continue;
-        }
-
-
-        if (
-            !matching_record
-        )
-            continue;
-
-
-        /*
-            A blank line ends the current record.
-        */
-        if (
-            strlen(line) == 0
-        ) {
-
-            if (
-                matching_record
-            ) {
-
-                fclose(
-                    marc_file
-                );
-
-                return 1;
-            }
-
-            in_record = 0;
-            continue;
-        }
-
-
-        /*
-            [001], [245], [264], etc.
-        */
-        if (
-            line[0] == '['
-        ) {
-
-            char tag[4];
-
-            if (
-                strlen(line) >= 5 &&
-                line[4] == ']'
-            ) {
-
-                tag[0] = line[1];
-                tag[1] = line[2];
-                tag[2] = line[3];
-                tag[3] = '\0';
-
-                /*
-                    Control field.
-                */
-                if (
-                    atoi(tag) < 10
-                ) {
-
-                    current_field = atoi(tag);
-
-                } else {
-
-                    /*
-                        Data field header will be read
-                        from IND1 / IND2 lines below.
-                    */
-                    current_field = atoi(tag);
-                }
-            }
-
-            continue;
-        }
-
-
-        /*
-            Control field:
-                VALUE=007E01
-        */
-        if (
-            current_field >= 0 &&
-            current_field < 10 &&
-            strncmp(
-                line,
-                "VALUE=",
-                6
-            ) == 0
-        ) {
-
-            char output[
-                MARC_LINE_LENGTH
-            ];
-
-            snprintf(
-                output,
-                sizeof(output),
-                "%03d %s",
-                current_field,
-                line + 6
-            );
-
-            add_marc_line(
-                output
-            );
-
-            continue;
-        }
-
-
-        /*
-            Data field indicators.
-
-            The source format uses:
-
-                IND1=#
-                IND2=0
-
-            Blank indicators are represented by '#'.
-        */
-        if (
-            strncmp(
-                line,
-                "IND1=",
-                5
-            ) == 0
-        ) {
-
-            char indicator1 =
-                line[5];
-
-            char next_line[
-                DATABASE_LINE_LENGTH
-            ];
-
-            long position =
-                ftell(
-                    marc_file
-                );
-
-            if (
-                fgets(
-                    next_line,
-                    sizeof(next_line),
-                    marc_file
-                ) == NULL
-            ) {
-
-                fclose(
-                    marc_file
-                );
-
-                return -1;
-            }
-
-            next_line[
-                strcspn(
-                    next_line,
-                    "\r\n"
-                )
-            ] = '\0';
-
-
-            if (
-                strncmp(
-                    next_line,
-                    "IND2=",
-                    5
-                ) != 0
-            ) {
-
-                fclose(
-                    marc_file
-                );
-
-                return -1;
-            }
-
-
-            char indicator2 =
-                next_line[5];
-
-
-            if (
-                indicator1 == '#'
-            )
-                indicator1 = ' ';
-
-            if (
-                indicator2 == '#'
-            )
-                indicator2 = ' ';
-
-
-            char header[
-                MARC_LINE_LENGTH
-            ];
-
-            snprintf(
-                header,
-                sizeof(header),
-                "%03d %c%c",
-                current_field,
-                indicator1,
-                indicator2
-            );
-
-            add_marc_line(
-                header
-            );
-
-            (void)position;
-
-            continue;
-        }
-
-
-        /*
-            Subfield:
-
-                $a=value
-                $b=value
-                etc.
-
-            The source database may contain leading
-            whitespace before the $.
-        */
-        char *subfield_start =
-            strchr(
-                line,
-                '$'
-            );
-
-
-        if (
-            subfield_start != NULL &&
-            subfield_start[1] != '\0' &&
-            subfield_start[2] == '='
-        ) {
-
-            char prefix[16];
-
-            snprintf(
-                prefix,
-                sizeof(prefix),
-                "  $%c=",
-                subfield_start[1]
-            );
-
-
-            const char *value =
-                subfield_start + 3;
-
-
-            if (
-                current_field == 500
-            ) {
-
-                add_marc_wrapped_subfield(
-                    prefix,
-                    value
-                );
-
-            } else {
-
-                char output[
-                    MARC_LINE_LENGTH
-                ];
-
-                snprintf(
-                    output,
-                    sizeof(output),
-                    "%s%s",
-                    prefix,
-                    value
-                );
-
-                add_marc_line(
-                    output
-                );
-            }
-
-            continue;
-        }
+        loaded_marc_record = NULL;
     }
 
+    if (game_count == 0)
+        return 0;
 
-    fclose(
-        marc_file
+    if (marc_selection < 0 ||
+        marc_selection >= game_count)
+        return 0;
+
+    marc_file = fopen(
+        "sd:/marcviiew_marc.txt",
+        "rb"
     );
 
+    if (marc_file == NULL)
+        return -1;
 
-    if (
-        matching_record
-    )
-        return 1;
+    if (marcviiew_parser_init(
+            &parser,
+            marc_file
+        ) != 0)
+    {
+        fclose(marc_file);
+        return -1;
+    }
 
+    while (1)
+    {
+        const char *record_id;
+
+        record = NULL;
+
+        result =
+            marcviiew_parser_next(
+                &parser,
+                &record
+            );
+
+        if (result == 0)
+            break;
+
+        if (result < 0)
+        {
+            fclose(marc_file);
+            return -1;
+        }
+
+        if (record == NULL)
+        {
+            fclose(marc_file);
+            return -1;
+        }
+
+        record_id =
+            marc_record_get_control_field(
+                record,
+                "001"
+            );
+
+        if (record_id != NULL &&
+            strcmp(
+                record_id,
+                games[marc_selection].id
+            ) == 0)
+        {
+            loaded_marc_record = record;
+            fclose(marc_file);
+
+            render_marc_record(
+                loaded_marc_record
+            );
+
+            return 1;
+        }
+
+        marc_record_free(record);
+    }
+
+    fclose(marc_file);
 
     return 0;
 }
@@ -2461,64 +2385,40 @@ void show_marc_menu() {
     );
 }
 
-
-void show_marc_record() {
-
+void show_marc_record()
+{
     int result =
         load_marc_record();
-
 
     printf(
         "\x1b[2J\x1b[H"
     );
 
     print_ui_line('=');
-
-    print_centered(
-        "MARC Record"
-    );
-
+    print_centered("MARC Record");
     print_ui_line('=');
-
     printf("\n");
 
-
-    if (
-        result == -1
-    ) {
-
+    if (result == -1)
+    {
         print_centered(
             "MARC database not found"
         );
 
         print_centered(
-            "or could not be read."
+            "or could not be parsed."
         );
 
         printf("\n");
-
-        print_centered(
-            "Expected:"
-        );
-
-        print_centered(
-            "sd:/marcviiew_marc.txt"
-        );
-
+        print_centered("Expected:");
+        print_centered("sd:/marcviiew_marc.txt");
         printf("\n");
-
-        print_centered(
-            "B = Back"
-        );
-
+        print_centered("B = Back");
         return;
     }
 
-
-    if (
-        result == 0
-    ) {
-
+    if (result == 0)
+    {
         print_centered(
             "MARC record not found."
         );
@@ -2532,39 +2432,25 @@ void show_marc_record() {
                 line,
                 sizeof(line),
                 "Game: %s",
-                games[
-                    marc_selection
-                ].title
+                games[marc_selection].title
             );
 
-            print_centered(
-                line
-            );
-
+            print_centered(line);
 
             snprintf(
                 line,
                 sizeof(line),
                 "ID: %s",
-                games[
-                    marc_selection
-                ].id
+                games[marc_selection].id
             );
 
-            print_centered(
-                line
-            );
+            print_centered(line);
         }
 
         printf("\n");
-
-        print_centered(
-            "B = Back"
-        );
-
+        print_centered("B = Back");
         return;
     }
-
 
     {
         char line[160];
@@ -2573,107 +2459,75 @@ void show_marc_record() {
             line,
             sizeof(line),
             "Game: %s",
-            games[
-                marc_selection
-            ].title
+            games[marc_selection].title
         );
 
-        print_centered(
-            line
-        );
-
+        print_centered(line);
 
         snprintf(
             line,
             sizeof(line),
             "ID: %s",
-            games[
-                marc_selection
-            ].id
+            games[marc_selection].id
         );
 
-        print_centered(
-            line
-        );
+        print_centered(line);
     }
-
 
     printf("\n");
 
+    {
+        int visible_lines = 15;
+        int max_scroll =
+            marc_line_count - visible_lines;
+        int i;
 
-    int visible_lines = 15;
+        if (max_scroll < 0)
+            max_scroll = 0;
 
-    int max_scroll =
-        marc_line_count -
-        visible_lines;
+        if (marc_scroll > max_scroll)
+            marc_scroll = max_scroll;
 
-    if (
-        max_scroll < 0
-    )
-        max_scroll = 0;
+        if (marc_scroll < 0)
+            marc_scroll = 0;
 
+        for (
+            i = marc_scroll;
+            i < marc_scroll + visible_lines &&
+            i < marc_line_count;
+            ++i
+        )
+        {
+            print_centered(
+                marc_lines[i]
+            );
+        }
 
-    if (
-        marc_scroll >
-        max_scroll
-    )
-        marc_scroll =
-            max_scroll;
+        printf("\n");
 
+        if (max_scroll > 0)
+        {
+            char scroll_line[80];
 
-    if (
-        marc_scroll < 0
-    )
-        marc_scroll = 0;
+            snprintf(
+                scroll_line,
+                sizeof(scroll_line),
+                "UP / DOWN = Scroll  (%d/%d)",
+                marc_scroll + 1,
+                max_scroll + 1
+            );
 
+            print_centered(scroll_line);
+        }
+        else
+        {
+            print_centered(
+                "UP / DOWN = Scroll"
+            );
+        }
 
-    for (
-        int i = marc_scroll;
-        i <
-            marc_scroll +
-            visible_lines &&
-        i < marc_line_count;
-        i++
-    ) {
-
-        print_centered(
-            marc_lines[i]
-        );
+        print_centered("B = Back");
     }
-
-
-    printf("\n");
-
-
-    if (
-        max_scroll > 0
-    ) {
-
-        char scroll_line[80];
-
-        snprintf(
-            scroll_line,
-            sizeof(scroll_line),
-            "UP / DOWN = Scroll  (%d/%d)",
-            marc_scroll + 1,
-            max_scroll + 1
-        );
-
-        print_centered(
-            scroll_line
-        );
-
-    } else {
-
-        print_centered(
-            "UP / DOWN = Scroll"
-        );
-    }
-
-
-    print_centered(
-        "B = Back"
-    );
 }
 
 
@@ -2720,12 +2574,10 @@ void show_imported_menu(void)
     print_centered("A = View Record");
     print_centered("B = Back");
 }
-
 void show_imported_record(void)
 {
     char path[256];
     char incoming_path[256];
-    char line[MARC_LINE_LENGTH];
     int installed;
     int incoming = 0;
     FILE *file;
@@ -2742,21 +2594,14 @@ void show_imported_record(void)
     print_ui_line('=');
     printf("\n");
 
-    print_label_value("Title: ", imported_records[imported_selection].title);
-    print_label_value("Game ID: ", imported_records[imported_selection].game_id);
-    print_label_value("MARC 001: ", imported_records[imported_selection].marc_001);
-
-    installed = find_game_by_id(imported_records[imported_selection].game_id);
-    print_centered(
-        installed >= 0
-            ? "Status: Imported record / Game installed"
-            : "Status: Imported record / Game not installed"
-    );
-
-    printf("\n");
+    installed =
+        find_game_by_id(
+            imported_records[imported_selection].game_id
+        );
 
     snprintf(
-        path, sizeof(path),
+        path,
+        sizeof(path),
         "sd:/marcviiew/imported/%s",
         imported_records[imported_selection].filename
     );
@@ -2766,181 +2611,123 @@ void show_imported_record(void)
     if (file == NULL)
     {
         snprintf(
-            incoming_path, sizeof(incoming_path),
+            incoming_path,
+            sizeof(incoming_path),
             "sd:/marcviiew_import/%s",
             imported_records[imported_selection].filename
         );
-        file = fopen(incoming_path, "rb");
+
+        file = fopen(
+            incoming_path,
+            "rb"
+        );
+
         if (file != NULL)
             incoming = 1;
     }
 
     if (file == NULL)
     {
-        print_centered("Imported .mrc file could not be opened.");
+        print_centered(
+            "Imported .mrc file could not be opened."
+        );
+
         printf("\n");
         print_centered("B = Back");
         return;
     }
 
-    record = marc_record_create();
+    record = read_mrc_record(file);
+
+    fclose(file);
 
     if (record == NULL)
     {
-        fclose(file);
-        print_centered("Could not create MARC record.");
+        print_centered(
+            "Could not read imported MARC record."
+        );
+
+        printf("\n");
+        print_centered(
+            "The file is not a readable ISO 2709"
+        );
+        print_centered(
+            "MARC record for ViiewLib."
+        );
+
         printf("\n");
         print_centered("B = Back");
         return;
     }
 
-    if (marc_record_read(record, file) != 0)
-    {
-        fclose(file);
-        marc_record_free(record);
-        print_centered("Could not read imported MARC record.");
-        printf("\n");
-        print_centered("B = Back");
-        return;
-    }
-
-    fclose(file);
+    imported_update_metadata_from_record(
+        &imported_records[imported_selection],
+        record
+    );
 
     if (incoming)
     {
         snprintf(
-            incoming_path, sizeof(incoming_path),
+            incoming_path,
+            sizeof(incoming_path),
             "sd:/marcviiew_import/%s",
             imported_records[imported_selection].filename
         );
+
         snprintf(
-            path, sizeof(path),
+            path,
+            sizeof(path),
             "sd:/marcviiew/imported/%s",
             imported_records[imported_selection].filename
         );
-        rename(incoming_path, path);
+
+        rename(
+            incoming_path,
+            path
+        );
     }
 
-    {
-        MARC_Field *field;
-        const char *value;
+    print_label_value(
+        "Title: ",
+        imported_records[imported_selection].title
+    );
 
-        field = marc_record_get_field_by_tag(record, "245");
-        if (field != NULL)
-            imported_subfield(
-                field, 'a',
-                imported_records[imported_selection].title,
-                sizeof(imported_records[imported_selection].title)
-            );
+    print_label_value(
+        "Game ID: ",
+        imported_records[imported_selection].game_id
+    );
 
-        field = marc_record_get_field_by_tag(record, "001");
-        if (field != NULL)
-        {
-            value = marc_field_get_control_value(field);
-            if (value != NULL)
-            {
-                strncpy(
-                    imported_records[imported_selection].marc_001,
-                    value,
-                    sizeof(imported_records[imported_selection].marc_001) - 1
-                );
-                imported_records[imported_selection].marc_001[
-                    sizeof(imported_records[imported_selection].marc_001) - 1
-                ] = '\0';
-            }
-        }
-    }
+    print_label_value(
+        "MARC 001: ",
+        imported_records[imported_selection].marc_001
+    );
 
-    marc_line_count = 0;
+    print_centered(
+        installed >= 0
+            ? "Status: Imported record / Game installed"
+            : "Status: Imported record / Game not installed"
+    );
 
-    {
-        const char *leader = marc_record_get_leader(record);
+    printf("\n");
 
-        if (leader != NULL)
-        {
-            snprintf(line, sizeof(line), "LDR %s", leader);
-            add_marc_line(line);
-        }
-    }
-
-    {
-        const char *value =
-            marc_record_get_control_field(record, "001");
-
-        if (value != NULL)
-        {
-            snprintf(line, sizeof(line), "001 %s", value);
-            add_marc_line(line);
-        }
-    }
-
-    {
-        size_t i;
-        size_t field_count = marc_record_get_field_count(record);
-
-        for (i = 0; i < field_count; ++i)
-        {
-            MARC_Field *field = marc_record_get_field(record, i);
-            const char *tag;
-            char header[32];
-            char output[MARC_LINE_LENGTH];
-            size_t j;
-            size_t subfield_count;
-
-            if (field == NULL ||
-                marc_field_is_control_field(field))
-                continue;
-
-            tag = marc_field_get_tag(field);
-            if (tag == NULL)
-                continue;
-
-            snprintf(
-                header, sizeof(header),
-                "%s %c%c",
-                tag,
-                marc_field_get_indicator1(field),
-                marc_field_get_indicator2(field)
-            );
-            add_marc_line(header);
-
-            subfield_count = marc_field_get_subfield_count(field);
-
-            for (j = 0; j < subfield_count; ++j)
-            {
-                MARC_Subfield *subfield =
-                    marc_field_get_subfield(field, j);
-                const char *value;
-
-                if (subfield == NULL)
-                    continue;
-
-                value = marc_subfield_get_value(subfield);
-                if (value == NULL)
-                    value = "";
-
-                snprintf(
-                    output, sizeof(output),
-                    "  $%c %s",
-                    marc_subfield_get_code(subfield),
-                    value
-                );
-                add_marc_line(output);
-            }
-        }
-    }
+    render_marc_record(
+        record
+    );
 
     marc_record_free(record);
 
     {
         int visible_lines = 12;
-        int max_scroll = marc_line_count - visible_lines;
+        int max_scroll =
+            marc_line_count - visible_lines;
         int i;
 
         if (max_scroll < 0)
             max_scroll = 0;
+
         if (imported_scroll > max_scroll)
             imported_scroll = max_scroll;
+
         if (imported_scroll < 0)
             imported_scroll = 0;
 
@@ -2948,8 +2735,13 @@ void show_imported_record(void)
             i = imported_scroll;
             i < imported_scroll + visible_lines &&
             i < marc_line_count;
-            ++i)
-            print_centered(marc_lines[i]);
+            ++i
+        )
+        {
+            print_centered(
+                marc_lines[i]
+            );
+        }
 
         printf("\n");
 
@@ -2958,16 +2750,20 @@ void show_imported_record(void)
             char scroll_line[80];
 
             snprintf(
-                scroll_line, sizeof(scroll_line),
+                scroll_line,
+                sizeof(scroll_line),
                 "UP / DOWN = Scroll (%d/%d)",
                 imported_scroll + 1,
                 max_scroll + 1
             );
+
             print_centered(scroll_line);
         }
         else
         {
-            print_centered("UP / DOWN = Scroll");
+            print_centered(
+                "UP / DOWN = Scroll"
+            );
         }
 
         print_centered("B = Back");
