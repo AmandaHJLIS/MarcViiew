@@ -391,7 +391,7 @@ static int imported_get_id(const char *filename, char *id)
 
     dot = strrchr(filename, '.');
 
-    if (dot == NULL || strcasecmp(dot, ".mrc") != 0)
+    if (dot == NULL || strcmp(dot, ".mrc") != 0)
         return 0;
 
     id_length = (size_t)(dot - (filename + 10));
@@ -590,7 +590,7 @@ static void imported_scan_directory(const char *directory)
         extension = strrchr(entry->d_name, '.');
 
         if (extension == NULL ||
-            strcasecmp(extension, ".mrc") != 0)
+            strcmp(extension, ".mrc") != 0)
             continue;
 
         snprintf(
