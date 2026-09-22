@@ -391,6 +391,16 @@ static int imported_scroll = 0;
 
 static MARC_Record *loaded_marc_record = NULL;
 
+static void render_marc_record(MARC_Record *record);
+static MARC_Record *read_mrc_record(FILE *file);
+static void imported_update_metadata_from_record(
+    ImportedRecord *imported,
+    MARC_Record *record
+);
+static int imported_load_metadata(
+    ImportedRecord *imported
+);
+
 static int imported_get_id(const char *filename, char *id)
 {
     const char *dot;
