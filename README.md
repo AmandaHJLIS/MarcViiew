@@ -149,6 +149,13 @@ MarcViiew remains under active development. Planned features include:
 * Clamp the cursor so it doesn't go beyond the valid records.
 * Add a scroll offset so when the cursor reaches the bottom of the visible area, the list moves upward.
 * Automatic management of imported .mrc files, including removing successfully imported files from the temporary marcviiew_import directory while retaining them in marcviiew/imported/.
+* Support for reading installed WiiWare and other compatible title metadata from the Wii NAND.
+* Integration of installed WiiWare titles into the existing MarcViiew catalogue.
+* Matching discovered WiiWare titles against the existing derived games database and MARC database.
+* MARC 21 record viewing and encoding for WiiWare titles discovered from the NAND.
+* ISO 2709 `.mrc` export for WiiWare catalogue records.
+* Future support for WiiWare titles stored on SD/USB where their titles can be reliably identified.
+* Correction of WiiWare-specific MARC metadata, including `300` physical-description data.
 * Importing external ISO 2709/MARC 21 records into MarcViiew
 * Improved interoperability with externally generated MARC 21 data
 * Additional MARC 21 validation and standards coverage
