@@ -565,12 +565,47 @@ static void imported_add(const ImportedRecord *record)
     }
 }
 
+static int imported_add_filename(
+    const char *filename
+)
+{
+    ImportedRecord record;
+
+    if (filename == NULL ||
+        imported_record_count >= MAX_IMPORTED_RECORDS)
+        return 0;
+
+    memset(&record, 0, sizeof(record));
+
+    if (!imported_get_id(filename, record.game_id))
+        return 0;
+
+    strncpy(
+        record.filename,
+        filename,
+        sizeof(record.filename) - 1
+    );
+
+    snprintf(
+        record.title,
+        sizeof(record.title),
+        "Imported MARC record (%s)",
+        record.game_id
+    );
+
+    strcpy(record.marc_001, "(not loaded)");
+
+    if (imported_exists(&record))
+        return 0;
+
+    imported_add(&record);
+    return 1;
+}
+
 static void imported_scan_directory(const char *directory)
 {
     DIR *dir;
     struct dirent *entry;
-    char path[256];
-    ImportedRecord record;
 
     dir = opendir(directory);
 
@@ -593,23 +628,7 @@ static void imported_scan_directory(const char *directory)
             strcmp(extension, ".mrc") != 0)
             continue;
 
-        snprintf(
-            path,
-            sizeof(path),
-            "%s/%s",
-            directory,
-            entry->d_name
-        );
-
-        if (imported_load(
-                path,
-                entry->d_name,
-                &record
-            ) &&
-            !imported_exists(&record))
-        {
-            imported_add(&record);
-        }
+        imported_add_filename(entry->d_name);
     }
 
     closedir(dir);
@@ -617,12 +636,6 @@ static void imported_scan_directory(const char *directory)
 
 static void scan_imported_records(void)
 {
-    DIR *dir;
-    struct dirent *entry;
-    char source[256];
-    char destination[256];
-    ImportedRecord record;
-
     imported_record_count = 0;
     imported_selection = 0;
     imported_scroll = 0;
@@ -631,230 +644,15 @@ static void scan_imported_records(void)
     mkdir("sd:/marcviiew", 0777);
     mkdir("sd:/marcviiew/imported", 0777);
 
+    /*
+     * Startup only indexes filenames.
+     *
+     * We deliberately do not parse ISO 2709 here. A damaged or
+     * incompatible .mrc must never be able to flood the console
+     * during normal application startup.
+     */
     imported_scan_directory("sd:/marcviiew/imported");
-
-    dir = opendir("sd:/marcviiew_import");
-
-    if (dir == NULL)
-        return;
-
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if (entry->d_name[0] == '.')
-            continue;
-
-        if (imported_record_count >= MAX_IMPORTED_RECORDS)
-            break;
-
-        snprintf(
-            source,
-            sizeof(source),
-            "sd:/marcviiew_import/%s",
-            entry->d_name
-        );
-
-        if (!imported_load(
-                source,
-                entry->d_name,
-                &record
-            ))
-            continue;
-
-        if (imported_exists(&record))
-            continue;
-
-        snprintf(
-            destination,
-            sizeof(destination),
-            "sd:/marcviiew/imported/%s",
-            entry->d_name
-        );
-
-        if (rename(source, destination) == 0)
-            imported_add(&record);
-    }
-
-    closedir(dir);
-}
-
-
-
-static int search_results[MAX_SEARCH_RESULTS];
-
-
-static char marc_lines[
-    MAX_MARC_LINES
-][
-    MARC_LINE_LENGTH
-];
-
-
-void extract_game_id(
-    const char *name,
-    char *id
-) {
-
-    const char *start =
-        strchr(name, '[');
-
-    if (
-        start != NULL &&
-        strlen(start) >= 8
-    ) {
-
-        strncpy(
-            id,
-            start + 1,
-            6
-        );
-
-        id[6] = '\0';
-
-    } else {
-
-        strcpy(
-            id,
-            "??????"
-        );
-    }
-}
-
-
-void extract_game_title(
-    const char *name,
-    char *title
-) {
-
-    const char *start =
-        strchr(name, '[');
-
-    if (
-        start != NULL
-    ) {
-
-        int length =
-            start - name;
-
-        if (
-            length >= 100
-        )
-            length = 99;
-
-        strncpy(
-            title,
-            name,
-            length
-        );
-
-        title[length] = '\0';
-
-        while (
-            length > 0 &&
-            title[length - 1] == ' '
-        ) {
-
-            title[length - 1] =
-                '\0';
-
-            length--;
-        }
-
-    } else {
-
-        strncpy(
-            title,
-            name,
-            99
-        );
-
-        title[99] = '\0';
-    }
-}
-
-
-void setup_game_metadata(
-    Game *game
-) {
-
-    strcpy(
-        game->platform,
-        "Nintendo Wii"
-    );
-
-    strcpy(
-        game->region,
-        "Unknown"
-    );
-
-    strcpy(
-        game->release_date,
-        "Not yet catalogued"
-    );
-
-    strcpy(
-        game->publisher,
-        "Not yet catalogued"
-    );
-
-    strcpy(
-        game->developer,
-        "Not yet catalogued"
-    );
-
-    strcpy(
-        game->genre,
-        "Not yet catalogued"
-    );
-
-    strcpy(
-        game->series,
-        "Not yet catalogued"
-    );
-
-    strcpy(
-        game->synopsis,
-        "Not yet catalogued"
-    );
-}
-
-
-void copy_database_value(
-    const char *line,
-    const char *field,
-    char *destination,
-    int destination_size
-) {
-
-    int field_length =
-        strlen(field);
-
-    if (
-        strncmp(
-            line,
-            field,
-            field_length
-        ) == 0
-    ) {
-
-        int value_length =
-            strlen(line + field_length);
-
-        if (
-            value_length >=
-            destination_size
-        )
-            value_length =
-                destination_size - 1;
-
-        memcpy(
-            destination,
-            line + field_length,
-            value_length
-        );
-
-        destination[value_length] =
-            '\0';
-    }
+    imported_scan_directory("sd:/marcviiew_import");
 }
 
 
@@ -2879,8 +2677,10 @@ void show_imported_menu(void)
 void show_imported_record(void)
 {
     char path[256];
+    char incoming_path[256];
     char line[MARC_LINE_LENGTH];
     int installed;
+    int incoming = 0;
     FILE *file;
     MARC_Record *record;
 
@@ -2935,6 +2735,21 @@ void show_imported_record(void)
 
     if (file == NULL)
     {
+        snprintf(
+            incoming_path,
+            sizeof(incoming_path),
+            "sd:/marcviiew_import/%s",
+            imported_records[imported_selection].filename
+        );
+
+        file = fopen(incoming_path, "rb");
+
+        if (file != NULL)
+            incoming = 1;
+    }
+
+    if (file == NULL)
+    {
         print_centered("Imported .mrc file could not be opened.");
         printf("\n");
         print_centered("B = Back");
@@ -2963,6 +2778,76 @@ void show_imported_record(void)
     }
 
     fclose(file);
+
+    /*
+     * A record that was still in the incoming directory has now
+     * been successfully parsed. Move it into the persistent
+     * imported directory only after parsing succeeds.
+     */
+    if (incoming)
+    {
+        snprintf(
+            incoming_path,
+            sizeof(incoming_path),
+            "sd:/marcviiew_import/%s",
+            imported_records[imported_selection].filename
+        );
+
+        snprintf(
+            path,
+            sizeof(path),
+            "sd:/marcviiew/imported/%s",
+            imported_records[imported_selection].filename
+        );
+
+        rename(incoming_path, path);
+    }
+
+    /*
+     * Refresh the display metadata from the actual MARC record.
+     */
+    {
+        MARC_Field *field;
+        const char *value;
+
+        field = marc_record_get_field_by_tag(record, "245");
+
+        if (field != NULL &&
+            imported_subfield(
+                field,
+                'a',
+                imported_records[imported_selection].title,
+                sizeof(imported_records[imported_selection].title)
+            ) == 0)
+        {
+            snprintf(
+                imported_records[imported_selection].title,
+                sizeof(imported_records[imported_selection].title),
+                "Imported MARC record (%s)",
+                imported_records[imported_selection].game_id
+            );
+        }
+
+        field = marc_record_get_field_by_tag(record, "001");
+
+        if (field != NULL)
+        {
+            value = marc_field_get_control_value(field);
+
+            if (value != NULL)
+            {
+                strncpy(
+                    imported_records[imported_selection].marc_001,
+                    value,
+                    sizeof(imported_records[imported_selection].marc_001) - 1
+                );
+
+                imported_records[imported_selection].marc_001[
+                    sizeof(imported_records[imported_selection].marc_001) - 1
+                ] = '\0';
+            }
+        }
+    }
 
     marc_line_count = 0;
 
