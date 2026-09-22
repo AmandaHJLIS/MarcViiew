@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include <gccore.h>
 #include <wiiuse/wpad.h>
@@ -15,6 +16,11 @@
 
 #define MAX_GAMES 100
 #define MAX_SEARCH_RESULTS 100
+#define MAX_IMPORTED_RECORDS 100
+#define IMPORTED_RECORD_FILENAME_LENGTH 64
+#define IMPORTED_RECORD_TITLE_LENGTH 100
+#define IMPORTED_RECORD_ID_LENGTH 7
+#define IMPORTED_RECORD_001_LENGTH 100
 
 #define DATABASE_LINE_LENGTH 4096
 #define MAX_INFO_LINES 100
@@ -358,6 +364,12 @@ typedef struct {
 
 static Game games[MAX_GAMES];
 
+typedef struct { char filename[IMPORTED_RECORD_FILENAME_LENGTH]; char title[IMPORTED_RECORD_TITLE_LENGTH]; char game_id[IMPORTED_RECORD_ID_LENGTH]; char marc_001[IMPORTED_RECORD_001_LENGTH]; } ImportedRecord;
+static ImportedRecord imported_records[MAX_IMPORTED_RECORDS];
+static int imported_record_count = 0;
+static int imported_selection = 0;
+static int imported_scroll = 0;
+
 
 static int search_results[MAX_SEARCH_RESULTS];
 
@@ -537,6 +549,50 @@ void copy_database_value(
     }
 }
 
+
+
+static int imported_get_id(const char *filename, char *id) {
+    const char *p="marcviiew_"; const char *dot;
+    size_t n;
+    if (!filename || !id || strncmp(filename,p,10)!=0) return 0;
+    dot=strrchr(filename,'.'); if(!dot) return 0;
+    n=(size_t)(dot-(filename+10)); if(n!=6) return 0;
+    memcpy(id,filename+10,6); id[6]='\0'; return 1;
+}
+static int imported_subfield(MARC_Field *f,char code,char *out,size_t size) {
+    size_t i,n; MARC_Subfield *s; const char *v;
+    if(!f||!out||!size) return 0; n=marc_field_get_subfield_count(f);
+    for(i=0;i<n;i++){ s=marc_field_get_subfield(f,i); if(s&&marc_subfield_get_code(s)==code){v=marc_subfield_get_value(s); if(!v)return 0; strncpy(out,v,size-1);out[size-1]='\0';return 1;}}
+    return 0;
+}
+static int imported_load(const char *path,const char *filename,ImportedRecord *out) {
+    FILE *f; MARC_Record *r; MARC_Field *field; if(!path||!filename||!out)return 0;
+    memset(out,0,sizeof(*out)); if(!imported_get_id(filename,out->game_id))return 0;
+    strncpy(out->filename,filename,sizeof(out->filename)-1); f=fopen(path,"rb"); if(!f)return 0;
+    r=marc_record_create(); if(!r){fclose(f);return 0;} if(marc_record_read(r,f)!=0){marc_record_free(r);fclose(f);return 0;} fclose(f);
+    field=marc_record_get_field_by_tag(r,"001"); if(field){const char *v=marc_field_get_control_value(field); if(v)strncpy(out->marc_001,v,sizeof(out->marc_001)-1);}
+    field=marc_record_get_field_by_tag(r,"245"); if(field)imported_subfield(field,'a',out->title,sizeof(out->title));
+    if(!out->title[0])strcpy(out->title,"(Untitled MARC record)"); if(!out->marc_001[0])strcpy(out->marc_001,"(none)"); marc_record_free(r); return 1;
+}
+static int imported_exists(const ImportedRecord *x) {
+    int i; for(i=0;i<imported_record_count;i++) if(!strcmp(imported_records[i].filename,x->filename)||!strcmp(imported_records[i].game_id,x->game_id))return 1; return 0;
+}
+static void imported_add(const ImportedRecord *x) { if(x&&imported_record_count<MAX_IMPORTED_RECORDS) imported_records[imported_record_count++]=*x; }
+static void imported_scan_dir(const char *dirpath) {
+    DIR *d; struct dirent *e; char path[256]; ImportedRecord x;
+    d=opendir(dirpath); if(!d)return;
+    while((e=readdir(d))!=NULL){ if(e->d_name[0]=='.'||imported_record_count>=MAX_IMPORTED_RECORDS)continue; if(!strrchr(e->d_name,'.'))continue; {const char *ext=strrchr(e->d_name,'.'); if(strlen(ext)!=4||tolower((unsigned char)ext[1])!='m'||tolower((unsigned char)ext[2])!='r'||tolower((unsigned char)ext[3])!='c')continue;}
+        snprintf(path,sizeof(path),"%s/%s",dirpath,e->d_name); if(imported_load(path,e->d_name,&x)&&!imported_exists(&x))imported_add(&x);
+    } closedir(d);
+}
+static void scan_imported_records(void) {
+    DIR *d; struct dirent *e; char src[256],dst[256]; ImportedRecord x;
+    imported_record_count=0; imported_selection=0; imported_scroll=0;
+    mkdir("sd:/marcviiew_import",0777); mkdir("sd:/marcviiew",0777); mkdir("sd:/marcviiew/imported",0777);
+    imported_scan_dir("sd:/marcviiew/imported"); d=opendir("sd:/marcviiew_import"); if(!d)return;
+    while((e=readdir(d))!=NULL){ if(e->d_name[0]=='.'||imported_record_count>=MAX_IMPORTED_RECORDS)continue; snprintf(src,sizeof(src),"sd:/marcviiew_import/%s",e->d_name); if(!imported_load(src,e->d_name,&x)||imported_exists(&x))continue; snprintf(dst,sizeof(dst),"sd:/marcviiew/imported/%s",e->d_name); if(rename(src,dst)==0)imported_add(&x); }
+    closedir(d);
+}
 
 int find_game_by_id(
     const char *id
@@ -864,6 +920,7 @@ int reload_databases() {
     encode_status[0] = '\0';
 
     scan_catalogue();
+    scan_imported_records();
 
     /*
         The normal MarcViiew LMS uses the text databases.
@@ -2504,6 +2561,34 @@ void show_marc_record() {
 
     The normal LMS continues using marcviiew_marc.txt.
 */
+
+void show_imported_menu(void){
+    int i; printf("\x1b[2J\x1b[H"); print_ui_line('='); print_centered("Imported Records"); print_ui_line('='); printf("\\n");
+    if(imported_record_count==0){print_centered("No imported records found.");printf("\\n");print_centered("Place .mrc files in:");print_centered("sd:/marcviiew_import");printf("\\n");print_centered("B = Back");return;}
+    for(i=0;i<imported_record_count;i++) print_menu_item(imported_records[i].title,i==imported_selection);
+    printf("\\n"); {char line[80];snprintf(line,sizeof(line),"%d imported record(s).",imported_record_count);print_centered(line);} printf("\\n");print_centered("UP / DOWN = Move");print_centered("A = View Record");print_centered("B = Back");
+}
+void show_imported_record(void){
+    char path[256],line[200]; int installed; FILE *f; MARC_Record *r; MARC_Field *field;
+    if(imported_record_count==0||imported_selection<0||imported_selection>=imported_record_count)return;
+    snprintf(path,sizeof(path),"sd:/marcviiew/imported/%s",imported_records[imported_selection].filename); f=fopen(path,"rb");
+    printf("\\x1b[2J\\x1b[H");print_ui_line('=');print_centered("Imported MARC Record");print_ui_line('=');printf("\\n");
+    print_label_value("Title: ",imported_records[imported_selection].title);print_label_value("Game ID: ",imported_records[imported_selection].game_id);print_label_value("MARC 001: ",imported_records[imported_selection].marc_001);
+    installed=find_game_by_id(imported_records[imported_selection].game_id); print_centered(installed>=0?"Status: Imported record / Game installed":"Status: Imported record / Game not installed");printf("\\n");
+    if(!f){print_centered("Imported .mrc file could not be opened.");printf("\\n");print_centered("B = Back");return;}
+    r=marc_record_create(); if(!r){fclose(f);print_centered("Could not create MARC record.");printf("\\n");print_centered("B = Back");return;}
+    if(marc_record_read(r,f)!=0){fclose(f);marc_record_free(r);print_centered("Could not read imported MARC record.");printf("\\n");print_centered("B = Back");return;} fclose(f);
+    marc_line_count=0;
+    field=marc_record_get_field_by_tag(r,"245"); if(field&&imported_subfield(field,'a',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"245$a: %s",line);add_marc_line(x);}
+    field=marc_record_get_field_by_tag(r,"264"); if(field&&imported_subfield(field,'a',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"264$a: %s",line);add_marc_line(x);} if(field&&imported_subfield(field,'c',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"264$c: %s",line);add_marc_line(x);}
+    field=marc_record_get_field_by_tag(r,"300"); if(field&&imported_subfield(field,'a',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"300$a: %s",line);add_marc_line(x);}
+    field=marc_record_get_field_by_tag(r,"542"); if(field&&imported_subfield(field,'i',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"542$i: %s",line);add_marc_line(x);} if(field&&imported_subfield(field,'k',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"542$k: %s",line);add_marc_line(x);} if(field&&imported_subfield(field,'s',line,sizeof(line))){char x[220];snprintf(x,sizeof(x),"542$s: %s",line);add_marc_line(x);}
+    field=marc_record_get_field_by_tag(r,"655"); if(field){size_t i,n=marc_field_get_subfield_count(field);for(i=0;i<n;i++){MARC_Subfield *s=marc_field_get_subfield(field,i);if(s&&marc_subfield_get_code(s)=='a'){char x[220];snprintf(x,sizeof(x),"655$a: %s",marc_subfield_get_value(s));add_marc_line(x);}}}
+    field=marc_record_get_field_by_tag(r,"520"); if(field&&imported_subfield(field,'a',line,sizeof(line))){add_marc_line("520$a:");add_marc_line(line);} marc_record_free(r);
+    {int visible=10,max=marc_line_count-visible;if(max<0)max=0;if(imported_scroll>max)imported_scroll=max;if(imported_scroll<0)imported_scroll=0;for(int i=imported_scroll;i<imported_scroll+visible&&i<marc_line_count;i++)print_centered(marc_lines[i]);}
+    printf("\\n");print_centered("UP / DOWN = Scroll");print_centered("B = Back");print_centered("+ = Main Menu");
+}
+
 void encode_entire_database() {
 
     int result;
@@ -2918,8 +3003,13 @@ void show_main_menu() {
     );
 
     print_menu_item(
-        "Settings",
+        "Imported Records",
         menu_selection == 4
+    );
+
+    print_menu_item(
+        "Settings",
+        menu_selection == 5
     );
 
 
@@ -3249,6 +3339,7 @@ void settings_reload_storage() {
     ) {
 
         scan_catalogue();
+        scan_imported_records();
 
 
         catalogue_selection = 0;
@@ -4371,6 +4462,7 @@ int main(void)
     );
 
     scan_catalogue();
+    scan_imported_records();
 
 
     show_loading_screen(
@@ -4520,6 +4612,22 @@ int main(void)
             continue;
         }
 
+
+        if (screen == 13) {
+            if(input & INPUT_UP){if(imported_selection>0){imported_selection--;show_imported_menu();}}
+            if(input & INPUT_DOWN){if(imported_selection<imported_record_count-1){imported_selection++;show_imported_menu();}}
+            if(input & INPUT_SELECT){if(imported_record_count>0){imported_scroll=0;screen=14;show_imported_record();}}
+            if(input & INPUT_BACK){screen=1;show_main_menu();}
+            if(input & INPUT_PLUS){screen=1;show_main_menu();}
+            VIDEO_WaitVSync(); continue;
+        }
+        if (screen == 14) {
+            if(input & INPUT_UP){imported_scroll--;show_imported_record();}
+            if(input & INPUT_DOWN){imported_scroll++;show_imported_record();}
+            if(input & INPUT_BACK){screen=13;show_imported_menu();}
+            if(input & INPUT_PLUS){screen=1;show_main_menu();}
+            VIDEO_WaitVSync(); continue;
+        }
 
         /*
             Settings screen.
@@ -4882,6 +4990,15 @@ int main(void)
                 else if (
                     menu_selection == 4
                 ) {
+                    screen = 13;
+                    imported_selection = 0;
+                    imported_scroll = 0;
+                    show_imported_menu();
+                }
+
+                else if (
+                    menu_selection == 5
+                ) {
 
                     screen = 9;
 
@@ -5053,6 +5170,16 @@ int main(void)
 
                 show_search_keyboard();
             }
+
+            else if (screen == 13) {
+                screen = 1;
+                show_main_menu();
+            }
+
+            else if (screen == 14) {
+                screen = 13;
+                show_imported_menu();
+            }
         }
 
 
@@ -5091,7 +5218,7 @@ int main(void)
             ) {
 
                 if (
-                    menu_selection < 4
+                    menu_selection < 5
                 ) {
 
                     menu_selection++;
