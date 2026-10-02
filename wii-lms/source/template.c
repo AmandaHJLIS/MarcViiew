@@ -9,6 +9,7 @@
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <fat.h>
+#include <ogc/es.h>
 
 #include <viiewlib/marc.h>
 
@@ -47,6 +48,8 @@ static int catalogue_selection = 0;
 static int catalogue_scroll = 0;
 static int marc_menu_scroll = 0;
 static int game_count = 0;
+static int nand_title_count = 0;
+static int nand_game_count = 0;
 
 static int info_scroll = 0;
 
@@ -1006,6 +1009,159 @@ void scan_storage(
 }
 
 
+static int find_game_by_nand_code(
+    const char *code
+) {
+
+    int i;
+
+    if (code == NULL)
+        return -1;
+
+    for (
+        i = 0;
+        i < game_count;
+        i++
+    ) {
+
+        if (
+            strncmp(
+                games[i].id,
+                code,
+                4
+            ) == 0
+        )
+            return i;
+    }
+
+    return -1;
+}
+
+
+/*
+    Scan Wii NAND for downloadable titles.
+
+    WiiWare and Virtual Console titles use the
+    00010001 title type. Their low 32-bit title ID
+    is the four-character GameTDB ID, such as WMMP
+    for the PAL release of Muscle March.
+
+    We use the existing game database for the title
+    metadata, so NAND scanning only discovers which
+    digital titles are actually installed.
+*/
+static void scan_nand_catalogue(void)
+{
+
+    u32 title_count = 0;
+    u64 *titles = NULL;
+    s32 result;
+    u32 i;
+
+    nand_title_count = 0;
+    nand_game_count = 0;
+
+    result = __ES_Init();
+
+    if (result < 0)
+        return;
+
+    result = ES_GetNumTitles(&title_count);
+
+    if (result < 0 || title_count == 0)
+    {
+        __ES_Close();
+        return;
+    }
+
+    titles = malloc(
+        (title_count + 1) * sizeof(u64)
+    );
+
+    if (titles == NULL)
+    {
+        __ES_Close();
+        return;
+    }
+
+    result = ES_GetTitles(
+        titles,
+        title_count
+    );
+
+    if (result < 0)
+    {
+        free(titles);
+        __ES_Close();
+        return;
+    }
+
+    for (
+        i = 0;
+        i < title_count;
+        i++
+    ) {
+
+        u64 title_id = titles[i];
+        u32 title_type =
+            (u32)(title_id >> 32);
+        u32 title_code =
+            (u32)title_id;
+        char code[5];
+        int game_index;
+
+        /*
+            00010001 contains downloadable Wii
+            titles, including WiiWare and Virtual
+            Console software.
+        */
+        if (title_type != 0x00010001)
+            continue;
+
+        code[0] = (char)((title_code >> 24) & 0xFF);
+        code[1] = (char)((title_code >> 16) & 0xFF);
+        code[2] = (char)((title_code >> 8) & 0xFF);
+        code[3] = (char)(title_code & 0xFF);
+        code[4] = '\0';
+
+        nand_title_count++;
+
+        game_index =
+            find_game_by_nand_code(code);
+
+        if (
+            game_index < 0 ||
+            game_count >= MAX_GAMES
+        )
+            continue;
+
+        /*
+            Do not add a digital title twice if a
+            matching entry has already been discovered
+            from another source.
+        */
+        if (
+            find_game_by_id(code) >= 0
+        )
+            continue;
+
+        games[game_count] =
+            games[game_index];
+
+        /*
+            Keep the database entry's original ID
+            and metadata. This branch only needs to
+            discover installed NAND titles.
+        */
+        game_count++;
+        nand_game_count++;
+    }
+
+    free(titles);
+    __ES_Close();
+}
+
+
 void scan_catalogue() {
 
     game_count = 0;
@@ -1025,6 +1181,8 @@ void scan_catalogue() {
     }
 
     load_game_database();
+
+    scan_nand_catalogue();
 }
 
 
