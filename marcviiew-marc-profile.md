@@ -1,10 +1,8 @@
 # MarcViiew MARC21 Profile
 
-**Status:** Current  
-
-**Version:** 1.0  
-
-**Last Updated:** 13 September 2026
+**Status:** Current  \
+**Version:** 1.1  \
+**Last Updated:** 2 October 2026
 
 ## 1. Overview
 
@@ -54,10 +52,40 @@ and the release date used by MarcViiew.
 
 ## 300 — Physical Description
 
-MarcViiew use: Wii disc description
+MarcViiew use: Wii disc description for physical releases
 
 The 300 field describes the physical Wii disc associated with
-the record.
+a physical release.
+
+MarcViiew currently generates:
+
+300 ## $a 1 Wii optical disc
+
+The field is generated only when the source record contains:
+
+DISTRIBUTION=PHYSICAL
+
+Digital releases do not receive a 300 field.
+
+## 338 — Carrier Type
+
+MarcViiew use: Carrier type for physical Wii disc releases
+
+The 338 field identifies the carrier type of a physical Wii
+disc release.
+
+MarcViiew currently generates:
+
+338 ## $a computer disc $2 rdacarrier
+
+The field is generated only when the source record contains:
+
+DISTRIBUTION=PHYSICAL
+
+The term "computer disc" and the source code "rdacarrier" are
+from the RDA Carrier Type vocabulary used with MARC 338.
+
+Digital releases do not receive a 338 field.
 
 ## 500 — General Note
 
@@ -96,7 +124,31 @@ for the associated genre/form term.
 ## MarcViiew uses:
 
 $2 Wiiext
-3. WiiExt
+
+## 3. Source Distribution Values
+
+The MarcViiew source database uses the `DISTRIBUTION` field
+to distinguish physical and digital releases.
+
+Supported values are:
+
+`DISTRIBUTION=PHYSICAL`
+
+The release has a physical carrier. MarcViiew generates fields
+300 and 338.
+
+`DISTRIBUTION=DIGITAL`
+
+The release is digitally distributed. MarcViiew does not generate
+fields 300 or 338.
+
+If `DISTRIBUTION` is missing or contains another value, MarcViiew
+does not generate fields 300 or 338.
+
+This prevents the generator from guessing physical characteristics
+when the distribution type is unknown.
+
+## 4. WiiExt
 
 WiiExt is an unofficial vocabulary/profile developed for use with
 MarcViiew.
@@ -105,7 +157,7 @@ WiiExt is not an official Library of Congress extension,
 vocabulary, or standard, and is not endorsed or maintained by the
 Library of Congress.
 
-## 4. LMS Compatibility
+## 5. LMS Compatibility
 
 MarcViiew field definitions and WiiExt may not be compatible with
 your LMS. Please refer to your LMS procedures for configuration.
@@ -113,7 +165,7 @@ your LMS. Please refer to your LMS procedures for configuration.
 MarcViiew does not provide LMS-specific configuration or
 implementation instructions.
 
-## 5. Scope
+## 6. Scope
 
 This document defines the current MarcViiew MARC21 profile.
 
@@ -121,6 +173,7 @@ Fields and conventions may be expanded or revised in future
 versions. Changes to the profile should be documented through
 version history.
 
-| 1.0 | 13/09/2026 | Creation of documentation |
+| Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-13 | Initial MarcViiew MARC21 profile |
+| 1.1 | 2026-10-02 | Added distribution handling and 338 carrier type |
