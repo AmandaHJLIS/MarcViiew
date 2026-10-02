@@ -319,4 +319,4 @@ Library of Congress — for the MARC 21 bibliographic standards.
 
 ISO/TC 46 — for ISO 2709, Information and documentation — Format for information exchange.
 
-Lilyflower - Extensive tester for MarcViiew on VWii, and provider of external .mrc files.
+Lilyflower - for extensively testing MarcViiew on VWii, and providing external .mrc files.
