@@ -4,7 +4,7 @@
 
 MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
 
-MarcViiew combines Wii game detection with library and information science principles, allowing games stored on an SD card or USB device to be identified by their Wii Game ID and matched against a local metadata database. Game information can then be viewed for cataloguing purposes alongside MARC 21 bibliographic records.
+MarcViiew combines Wii game and installed-title detection with library and information science principles, allowing software stored on SD/USB storage or installed on the Wii NAND to be identified by its Wii Game ID and matched against local metadata and MARC 21 databases. Game information can then be viewed for cataloguing purposes alongside MARC 21 bibliographic records.
 
 The project is designed with libraries, librarians, library technicians, and library and information science students in mind. It explores how established library cataloguing standards and controlled vocabularies can be applied to video game collections within a Wii homebrew environment.
 
@@ -101,6 +101,8 @@ These conventions are intended to provide consistent representation of video gam
 * Dates supplied by GameTDB are normalised to YYYY-MM-DD.
 * Publisher and developer information is retained from the source metadata.
 * GameTDB genre terms are mapped to preferred Wiiext terms where an appropriate term exists.
+* Distribution metadata distinguishes physical and digital releases where the source data supports that distinction.
+* Storage Source metadata records where MarcViiew discovered a title and is kept separate from Distribution metadata.
 
 ### MARC 21
 
@@ -108,11 +110,14 @@ These conventions are intended to provide consistent representation of video gam
 * `245` contains the game title.
 * Non-filing characters are accounted for in the 245 second indicator.
 * `264` contains publication/distribution information and the release date used by MarcViiew.
-* `300` describes the physical Wii disc.
+* `300` describes the physical Wii disc for records marked `DISTRIBUTION=PHYSICAL`.
+* `338` describes the carrier type for physical Wii disc releases.
 * `500` contains the game synopsis.
 * `542` contains selected metadata provenance information.
 * `655` contains Wiiext genre/form terms.
 * `655 $2` identifies Wiiext as the source vocabulary.
+
+Digital releases do not receive the physical-description `300` and `338` fields under the current MarcViiew profile.
 
 For the complete field definitions and usage rules, see the [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
 
@@ -122,9 +127,13 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 * Detects Wii games stored on USB and SD devices
 * Identifies games using their Wii Game ID
-* Matches games against the MarcViiew database
-* Displays game metadata
-* Displays game synopses
+* Detects compatible installed Wii software from the Wii NAND
+* Detects Wii digital titles stored in SD/USB title directories when their title ID and `content.bin` can be reliably identified
+* Matches discovered titles against the MarcViiew metadata and MARC databases
+* Merges duplicate discoveries of the same Wii Game ID
+* Records discovery Source information such as SD, USB, NAND, or multiple sources
+* Records physical/digital Distribution metadata
+* Displays game metadata and synopses
 * Scrollable game information
 * Nintendo Wii Homebrew Channel support
 * Classic Controller support
@@ -135,38 +144,33 @@ These conventions may change as MarcViiew's cataloguing model develops.
 * Controlled vocabulary and thesaurus support through Wiiext
 * MarcViiew game database generated from GameTDB data
 * Normal game record and MARC21 search modes
-* Database and storage-device reload functionality
+* Database, storage-device, and NAND reload functionality
 * MARC 21 text-database parsing
 * ISO 2709 `.mrc` encoding
 * Encoding of individual game records to `.mrc`
 * ViiewLib MARC 21 and ISO 2709 integration
-* MARC 21 `.mrc` importer
+* MARC 21 `.mrc` importing
+* Persistent management of successfully imported MARC records
+* Duplicate protection for imported records
+* Imported-record, catalogue, and MARC-view scrolling improvements
 
-## Planned Features
+## Development Status
 
-MarcViiew remains under active development. Planned features include:
+MarcViiew is in active beta development.
 
-* Clamp the cursor so it doesn't go beyond the valid records.
-* Add a scroll offset so when the cursor reaches the bottom of the visible area, the list moves upward.
-* Automatic management of imported .mrc files, including removing successfully imported files from the temporary marcviiew_import directory while retaining them in marcviiew/imported/.
-* Support for reading installed WiiWare and other compatible title metadata from the Wii NAND.
-* Integration of installed WiiWare titles into the existing MarcViiew catalogue.
-* Matching discovered WiiWare titles against the existing derived games database and MARC database.
-* MARC 21 record viewing and encoding for WiiWare titles discovered from the NAND.
-* ISO 2709 `.mrc` export for WiiWare catalogue records.
-* Future support for WiiWare titles stored on SD/USB where their titles can be reliably identified.
-* Correction of WiiWare-specific MARC metadata, including `300` physical-description data.
-* Importing external ISO 2709/MARC 21 records into MarcViiew
-* Improved interoperability with externally generated MARC 21 data
-* Additional MARC 21 validation and standards coverage
-* Further ISO 2709 compatibility testing
-* Continued ViiewLib API refinement and documentation
-* Additional ViiewLib portability testing
-* Further Wii performance and memory optimisation
-* Continued refinement of the MarcViiew catalogue and user interface
-* Additional catalogue and MARC search functionality
+The major catalogue and discovery features planned for the current beta development cycle are now implemented, including installed-title discovery, SD/USB digital-title discovery, catalogue Source and Distribution metadata, duplicate discovery handling, imported-record management, MARC viewing, and ISO 2709 export.
 
-Planned features may change as development continues.
+Development following this milestone is focused on refinement rather than replacing the existing catalogue workflow. Current development areas include:
+
+* ViiewLib/API refinement
+* Further MARC 21 validation and interoperability work
+* Imported-record robustness
+* Catalogue and user-interface refinement
+* Performance and memory optimisation
+* Additional Wii hardware regression testing
+* Further MARC profile refinement
+
+The experimental development branch `imported-records-template` is used to develop and hardware-test new Wii application functionality before changes are considered for `main`.
 
 ## Beta Status
 
@@ -224,7 +228,7 @@ sd:/marcviiew_import/
 └── marcviiew_RMCP01.mrc
 ```
 
-The `GAMEID` must be exactly six characters and should correspond to the game's Wii identifier.
+The Game ID should correspond to the game's Wii identifier.
 
 ### **2. Start MarcViiew**
 
@@ -268,7 +272,9 @@ sd:/marcviiew/imported/marcviiew_RMCP01.mrc
 
 This allows MarcViiew to maintain a local collection of imported MARC records separately from the incoming import directory.
 
-You do not need to manually move the files yourself.
+If a record is already present in the persistent collection, MarcViiew protects against duplicate imported files rather than creating another copy.
+
+You do not need to manually move successfully imported files yourself.
 
 ### **Supported MARC 21 Data**
 
