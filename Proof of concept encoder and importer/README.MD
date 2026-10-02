@@ -8,17 +8,13 @@ The proof-of-concepts are separate from the main MarcViiew application and are i
 
 ## Directory Structure
 
-The proof-of-concept programs are divided into two categories.
+The proof-of-concept directory contains the following programs:
 
-### Active
+* `marc_game_import_test.c` — current MARC/game import integration test
+* `historical_marc_import.c` — earlier MARC import test retained for development history
+* `historical_viiewlib_test.c` — earlier ViiewLib integration test retained for development history
 
-Contains the current proof-of-concept used for ongoing MarcViiew and ViiewLib integration testing.
-
-### Historical
-
-Contains earlier proof-of-concept programs that have been superseded by later tests.
-
-The historical programs are retained for development history and reference. They are not part of the current active testing workflow.
+These files are retained together in this directory rather than being separate Active/Historical subdirectories. The historical programs are not part of the current active testing workflow.
 
 ## Requirements
 
@@ -54,7 +50,7 @@ The proof-of-concept Makefile links against this Wii build of ViiewLib.
 
 ViiewLib is available here:
 
-https://github.com/AmandaHJLIS/Viiewlib
+https://github.com/AmandaHJLIS/ViiewLib
 
 ## Building
 
@@ -224,9 +220,7 @@ These proof-of-concepts were created to validate this integration before incorpo
 
 The proof-of-concept programs are experimental development tools.
 
-The **Active** proof-of-concept represents the current development and testing path.
-
-The **Historical** proof-of-concepts represent earlier stages of development and are retained for reference.
+The current `marc_game_import_test.c` program represents the main application-specific MARC integration test. The `historical_*.c` programs represent earlier stages of development and are retained for reference.
 
 They should not be considered production components of MarcViiew.
 
