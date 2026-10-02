@@ -270,23 +270,29 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Current Development Focus
 
-The major catalogue-discovery work for this experimental branch is now substantially implemented.
+The major catalogue-discovery and beta feature work for this experimental branch is now substantially implemented and has been tested on real Wii hardware.
 
-Remaining development is primarily focused on:
+The next development milestone is focused on refinement of the underlying API and the catalogue workflow rather than adding another large discovery subsystem.
 
+Current development areas include:
+
+* ViiewLib/API refinement and documentation
+* Additional MARC 21 validation and interoperability work
+* Further ISO 2709 compatibility testing
+* Further imported-record workflow refinement
 * Final catalogue and Wii user-interface refinement
 * Additional metadata improvements where they provide clear catalogue value
-* Further imported-record workflow refinement
-* Additional MARC 21 validation and standards coverage
-* Further ISO 2709 compatibility testing
-* Continued ViiewLib API refinement and documentation
-* Further Wii performance and memory optimisation
+* Wii performance and memory optimisation
 * Hardware regression testing
 * Reviewing experimental changes before they are considered for `main`
+
+The `imported-records-template` branch is therefore also the development baseline for the next API-refinement stage of MarcViiew.
 
 ## Beta Status
 
 MarcViiew is currently in **beta development**.
+
+The current experimental state corresponds to the **0.6.0-beta development milestone**, following the feature-focused 0.5.0-beta milestone.
 
 The `imported-records-template` branch is an experimental development branch rather than a stable release. Features on this branch should be considered provisional until they have been built and tested on real Wii hardware.
 
