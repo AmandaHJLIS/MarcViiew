@@ -69,7 +69,7 @@ For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controll
 
 ## ViiewLib Integration
 
-<img width="305" height="66" alt="ViiewLib" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48e8-bb7b-81f281b966ef" />
+<img width="305" height="66" alt="ViiewLib" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
 
 MarcViiew uses **ViiewLib**, a lightweight C library developed separately for MARC 21 record handling and ISO 2709 encoding and decoding.
 
