@@ -2614,6 +2614,7 @@ void show_marc_record()
 void show_imported_menu(void)
 {
     int i;
+    int visible_end;
     char line[80];
 
     printf("\x1b[2J\x1b[H");
@@ -2633,7 +2634,43 @@ void show_imported_menu(void)
         return;
     }
 
-    for (i = 0; i < imported_record_count; ++i)
+    /* Keep the selection within the imported-record list. */
+    if (imported_selection < 0)
+        imported_selection = 0;
+
+    if (imported_selection >= imported_record_count)
+        imported_selection = imported_record_count - 1;
+
+    /* Keep the selected record inside the visible 15-item window. */
+    if (imported_scroll < 0)
+        imported_scroll = 0;
+
+    if (imported_selection < imported_scroll)
+        imported_scroll = imported_selection;
+
+    if (imported_selection >=
+        imported_scroll + GAME_LIST_VISIBLE_ITEMS)
+        imported_scroll =
+            imported_selection -
+            GAME_LIST_VISIBLE_ITEMS + 1;
+
+    if (imported_scroll >
+        imported_record_count - GAME_LIST_VISIBLE_ITEMS)
+    {
+        imported_scroll =
+            imported_record_count - GAME_LIST_VISIBLE_ITEMS;
+
+        if (imported_scroll < 0)
+            imported_scroll = 0;
+    }
+
+    visible_end =
+        imported_scroll + GAME_LIST_VISIBLE_ITEMS;
+
+    if (visible_end > imported_record_count)
+        visible_end = imported_record_count;
+
+    for (i = imported_scroll; i < visible_end; ++i)
         print_menu_item(imported_records[i].title, i == imported_selection);
 
     printf("\n");
