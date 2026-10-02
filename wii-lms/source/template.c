@@ -1009,47 +1009,6 @@ void scan_storage(
 }
 
 
-static int find_game_by_nand_code(
-    const char *code
-) {
-
-    int i;
-
-    if (code == NULL)
-        return -1;
-
-    for (
-        i = 0;
-        i < game_count;
-        i++
-    ) {
-
-        if (
-            strncmp(
-                games[i].id,
-                code,
-                4
-            ) == 0
-        )
-            return i;
-    }
-
-    return -1;
-}
-
-
-/*
-    Scan Wii NAND for downloadable titles.
-
-    WiiWare and Virtual Console titles use the
-    00010001 title type. Their low 32-bit title ID
-    is the four-character GameTDB ID, such as WMMP
-    for the PAL release of Muscle March.
-
-    We use the existing game database for the title
-    metadata, so NAND scanning only discovers which
-    digital titles are actually installed.
-*/
 static void scan_nand_catalogue(void)
 {
 
@@ -1107,8 +1066,7 @@ static void scan_nand_catalogue(void)
             (u32)(title_id >> 32);
         u32 title_code =
             (u32)title_id;
-        char code[5];
-        int game_index;
+        char code[7];
 
         /*
             00010001 contains downloadable Wii
@@ -1123,36 +1081,44 @@ static void scan_nand_catalogue(void)
         code[2] = (char)((title_code >> 8) & 0xFF);
         code[3] = (char)(title_code & 0xFF);
         code[4] = '\0';
+        code[5] = '\0';
+        code[6] = '\0';
 
         nand_title_count++;
 
-        game_index =
-            find_game_by_nand_code(code);
-
-        if (
-            game_index < 0 ||
-            game_count >= MAX_GAMES
-        )
-            continue;
-
         /*
-            Do not add a digital title twice if a
-            matching entry has already been discovered
-            from another source.
+            Only add titles which are represented in
+            the existing MarcViiew game database.
+            The database is loaded after this scan.
         */
         if (
+            game_count >= MAX_GAMES ||
             find_game_by_id(code) >= 0
         )
             continue;
 
-        games[game_count] =
-            games[game_index];
+        memset(
+            &games[game_count],
+            0,
+            sizeof(Game)
+        );
 
-        /*
-            Keep the database entry's original ID
-            and metadata. This branch only needs to
-            discover installed NAND titles.
-        */
+        strncpy(
+            games[game_count].id,
+            code,
+            sizeof(games[game_count].id) - 1
+        );
+
+        strncpy(
+            games[game_count].title,
+            code,
+            sizeof(games[game_count].title) - 1
+        );
+
+        setup_game_metadata(
+            &games[game_count]
+        );
+
         game_count++;
         nand_game_count++;
     }
@@ -1161,6 +1127,12 @@ static void scan_nand_catalogue(void)
     __ES_Close();
 }
 
+
+/*
+    NAND scanning discovers installed WiiWare and
+    Virtual Console title IDs. Metadata is filled
+    afterwards by the normal game database loader.
+*/
 
 void scan_catalogue() {
 
@@ -1180,9 +1152,9 @@ void scan_catalogue() {
         );
     }
 
-    load_game_database();
-
     scan_nand_catalogue();
+
+    load_game_database();
 }
 
 
