@@ -1085,6 +1085,106 @@ void scan_storage(
 }
 
 
+static void scan_sd_digital_titles(const char *root_path)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    dir = opendir(root_path);
+
+    if (dir == NULL)
+        return;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        char title_directory[256];
+        char content_path[256];
+        char code[7];
+        size_t length;
+        FILE *content;
+
+        if (entry->d_name[0] == '.')
+            continue;
+
+        length = strlen(entry->d_name);
+
+        if (length != 4 || game_count >= MAX_GAMES)
+            continue;
+
+        snprintf(
+            title_directory,
+            sizeof(title_directory),
+            "%s/%s",
+            root_path,
+            entry->d_name
+        );
+
+        snprintf(
+            content_path,
+            sizeof(content_path),
+            "%s/content.bin",
+            title_directory
+        );
+
+        content = fopen(content_path, "rb");
+
+        if (content == NULL)
+            continue;
+
+        fclose(content);
+
+        /*
+            Nintendo's SD Card Menu stores transferred
+            WiiWare, Virtual Console and channel titles
+            below private/wii/title/<four-letter ID>/.
+            The directory name is the ASCII title code.
+        */
+        code[0] = entry->d_name[0];
+        code[1] = entry->d_name[1];
+        code[2] = entry->d_name[2];
+        code[3] = entry->d_name[3];
+        code[4] = '\0';
+        code[5] = '\0';
+        code[6] = '\0';
+
+        {
+            int i;
+
+            for (i = 0; i < 4; ++i)
+                code[i] = (char)toupper((unsigned char)code[i]);
+        }
+
+        if (find_game_by_id(code) >= 0)
+            continue;
+
+        memset(&games[game_count], 0, sizeof(Game));
+
+        strncpy(
+            games[game_count].id,
+            code,
+            sizeof(games[game_count].id) - 1
+        );
+
+        strncpy(
+            games[game_count].title,
+            code,
+            sizeof(games[game_count].title) - 1
+        );
+
+        setup_game_metadata(&games[game_count]);
+
+        strcpy(
+            games[game_count].source,
+            "SD"
+        );
+
+        game_count++;
+    }
+
+    closedir(dir);
+}
+
+
 static void scan_nand_catalogue(void)
 {
 
@@ -1221,6 +1321,10 @@ void scan_catalogue() {
 
     scan_storage(
         "sd:/wbfs"
+    );
+
+    scan_sd_digital_titles(
+        "sd:/private/wii/title"
     );
 
     if (
