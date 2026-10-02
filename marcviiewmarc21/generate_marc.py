@@ -158,6 +158,11 @@ with open(
             ""
         )
 
+        distribution = game.get(
+            "DISTRIBUTION",
+            ""
+        ).strip().upper()
+
 
         # ======================================================
         # RECORD
@@ -263,27 +268,61 @@ with open(
 
         # ======================================================
         # 300 - PHYSICAL DESCRIPTION
+        #
+        # Only generated when the source record explicitly
+        # identifies the release as physical.
         # ======================================================
 
-        output.write(
-            "[300]\n"
-        )
+        if distribution == "PHYSICAL":
 
-        output.write(
-            "IND1=#\n"
-        )
+            output.write(
+                "[300]\n"
+            )
 
-        output.write(
-            "IND2=#\n"
-        )
+            output.write(
+                "IND1=#\n"
+            )
 
-        output.write(
-            "$a=1 Wii optical disc\n"
-        )
+            output.write(
+                "IND2=#\n"
+            )
 
-        output.write(
-            "\n"
-        )
+            output.write(
+                "$a=1 Wii optical disc\n"
+            )
+
+            output.write(
+                "\n"
+            )
+
+
+            # ==================================================
+            # 338 - CARRIER TYPE
+            # ==================================================
+
+            output.write(
+                "[338]\n"
+            )
+
+            output.write(
+                "IND1=#\n"
+            )
+
+            output.write(
+                "IND2=#\n"
+            )
+
+            output.write(
+                "$a=computer disc\n"
+            )
+
+            output.write(
+                "$2=rdacarrier\n"
+            )
+
+            output.write(
+                "\n"
+            )
 
 
         # ======================================================
