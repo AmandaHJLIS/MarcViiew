@@ -366,6 +366,7 @@ typedef struct {
     char genre[50];
     char series[50];
     char source[20];
+    char distribution[20];
     char synopsis[3000];
 
 } Game;
@@ -766,6 +767,11 @@ void setup_game_metadata(
     );
 
     strcpy(
+        game->distribution,
+        "Unknown"
+    );
+
+    strcpy(
         game->synopsis,
         "Not yet catalogued"
     );
@@ -985,6 +991,19 @@ int load_game_database() {
 
         copy_database_value(
             line,
+            "DISTRIBUTION=",
+            games[
+                current_game_index
+            ].distribution,
+            sizeof(
+                games[
+                    current_game_index
+                ].distribution
+            )
+        );
+
+        copy_database_value(
+            line,
             "SYNOPSIS=",
             games[
                 current_game_index
@@ -1002,6 +1021,36 @@ int load_game_database() {
     );
 
     return 1;
+}
+
+
+static void add_game_source(Game *game, const char *source)
+{
+    if (game == NULL || source == NULL || source[0] == '\\0')
+        return;
+
+    if (strcmp(game->source, source) == 0)
+        return;
+
+    if (strcmp(game->source, "Unknown") == 0)
+    {
+        strncpy(game->source, source, sizeof(game->source) - 1);
+        game->source[sizeof(game->source) - 1] = '\\0';
+        return;
+    }
+
+    if (strstr(game->source, source) != NULL)
+        return;
+
+    if (strlen(game->source) + strlen(source) + 3 < sizeof(game->source))
+    {
+        strcat(game->source, " + ");
+        strcat(game->source, source);
+    }
+    else
+    {
+        strcpy(game->source, "Multiple");
+    }
 }
 
 
@@ -1041,40 +1090,46 @@ void scan_storage(
             break;
 
 
-        extract_game_title(
-            entry->d_name,
-            games[
-                game_count
-            ].title
-        );
+        char discovered_id[7];
+        const char *source = NULL;
 
         extract_game_id(
             entry->d_name,
-            games[
-                game_count
-            ].id
+            discovered_id
         );
 
-        setup_game_metadata(
-            &games[
-                game_count
-            ]
-        );
+        if (discovered_id[0] == '\\0')
+            continue;
 
         if (strcmp(storage_path, "sd:/wbfs") == 0)
-        {
-            strcpy(
-                games[game_count].source,
-                "SD"
-            );
-        }
+            source = "SD";
         else if (strcmp(storage_path, "usb:/wbfs") == 0)
+            source = "USB";
+
         {
-            strcpy(
-                games[game_count].source,
-                "USB"
-            );
+            int existing = find_game_by_id(discovered_id);
+
+            if (existing >= 0)
+            {
+                add_game_source(&games[existing], source);
+                continue;
+            }
         }
+
+        extract_game_title(
+            entry->d_name,
+            games[game_count].title
+        );
+
+        strncpy(
+            games[game_count].id,
+            discovered_id,
+            sizeof(games[game_count].id) - 1
+        );
+        games[game_count].id[sizeof(games[game_count].id) - 1] = '\\0';
+
+        setup_game_metadata(&games[game_count]);
+        add_game_source(&games[game_count], source);
 
         game_count++;
     }
@@ -1085,7 +1140,7 @@ void scan_storage(
 }
 
 
-static void scan_sd_digital_titles(const char *root_path)
+static void scan_digital_titles(const char *root_path, const char *source)
 {
     DIR *dir;
     struct dirent *entry;
@@ -1154,8 +1209,15 @@ static void scan_sd_digital_titles(const char *root_path)
                 code[i] = (char)toupper((unsigned char)code[i]);
         }
 
-        if (find_game_by_id(code) >= 0)
-            continue;
+        {
+            int existing = find_game_by_id(code);
+
+            if (existing >= 0)
+            {
+                add_game_source(&games[existing], source);
+                continue;
+            }
+        }
 
         memset(&games[game_count], 0, sizeof(Game));
 
@@ -1173,9 +1235,9 @@ static void scan_sd_digital_titles(const char *root_path)
 
         setup_game_metadata(&games[game_count]);
 
-        strcpy(
-            games[game_count].source,
-            "SD"
+        add_game_source(
+            &games[game_count],
+            source
         );
 
         game_count++;
@@ -1267,10 +1329,17 @@ static void scan_nand_catalogue(void)
             the existing MarcViiew game database.
             The database is loaded after this scan.
         */
-        if (
-            game_count >= MAX_GAMES ||
-            find_game_by_id(code) >= 0
-        )
+        {
+            int existing = find_game_by_id(code);
+
+            if (existing >= 0)
+            {
+                add_game_source(&games[existing], "NAND");
+                continue;
+            }
+        }
+
+        if (game_count >= MAX_GAMES)
             continue;
 
         memset(
@@ -1323,12 +1392,14 @@ void scan_catalogue() {
         "sd:/wbfs"
     );
 
-    scan_sd_digital_titles(
-        "sd:/private/wii/title"
+    scan_digital_titles(
+        "sd:/private/wii/title",
+        "SD"
     );
 
-    scan_sd_digital_titles(
-        "usb:/private/wii/title"
+    scan_digital_titles(
+        "usb:/private/wii/title",
+        "USB"
     );
 
     if (
@@ -1724,6 +1795,13 @@ void show_game_information() {
         &line_count,
         "Source",
         game->source
+    );
+
+    add_info_field(
+        info_lines,
+        &line_count,
+        "Distribution",
+        game->distribution
     );
 
     add_info_line(
