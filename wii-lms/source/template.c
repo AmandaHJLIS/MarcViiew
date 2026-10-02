@@ -365,6 +365,7 @@ typedef struct {
     char developer[50];
     char genre[50];
     char series[50];
+    char source[20];
     char synopsis[3000];
 
 } Game;
@@ -760,6 +761,11 @@ void setup_game_metadata(
     );
 
     strcpy(
+        game->source,
+        "Unknown"
+    );
+
+    strcpy(
         game->synopsis,
         "Not yet catalogued"
     );
@@ -1055,6 +1061,12 @@ void scan_storage(
             ]
         );
 
+        strncpy(
+            games[game_count].source,
+            storage_path,
+            sizeof(games[game_count].source) - 1
+        );
+
         game_count++;
     }
 
@@ -1172,6 +1184,11 @@ static void scan_nand_catalogue(void)
 
         setup_game_metadata(
             &games[game_count]
+        );
+
+        strcpy(
+            games[game_count].source,
+            "NAND"
         );
 
         game_count++;
@@ -1583,6 +1600,13 @@ void show_game_information() {
         &line_count,
         "Series",
         game->series
+    );
+
+    add_info_field(
+        info_lines,
+        &line_count,
+        "Source",
+        game->source
     );
 
     add_info_line(
