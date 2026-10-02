@@ -34,6 +34,7 @@
 
 #define CONSOLE_COLUMNS 80
 #define UI_WIDTH 50
+#define GAME_LIST_VISIBLE_ITEMS 15
 
 
 static void *xfb = NULL;
@@ -43,6 +44,8 @@ static int menu_selection = 0;
 static int screen = 0;
 
 static int catalogue_selection = 0;
+static int catalogue_scroll = 0;
+static int marc_menu_scroll = 0;
 static int game_count = 0;
 
 static int info_scroll = 0;
@@ -1061,7 +1064,9 @@ int reload_databases() {
     marc_record_from_search = 0;
 
     catalogue_selection = 0;
+    catalogue_scroll = 0;
     marc_selection = 0;
+    marc_menu_scroll = 0;
 
     info_scroll = 0;
     marc_scroll = 0;
@@ -2348,9 +2353,66 @@ void show_marc_menu() {
     }
 
 
+    if (
+        marc_selection < 0
+    )
+        marc_selection = 0;
+
+    if (
+        marc_selection >= game_count
+    )
+        marc_selection = game_count - 1;
+
+    if (
+        marc_menu_scroll < 0
+    )
+        marc_menu_scroll = 0;
+
+    if (
+        marc_selection < marc_menu_scroll
+    )
+        marc_menu_scroll = marc_selection;
+
+    if (
+        marc_selection >=
+        marc_menu_scroll +
+        GAME_LIST_VISIBLE_ITEMS
+    )
+        marc_menu_scroll =
+            marc_selection -
+            GAME_LIST_VISIBLE_ITEMS +
+            1;
+
+    if (
+        marc_menu_scroll >
+        game_count -
+        GAME_LIST_VISIBLE_ITEMS
+    ) {
+
+        marc_menu_scroll =
+            game_count -
+            GAME_LIST_VISIBLE_ITEMS;
+
+        if (
+            marc_menu_scroll < 0
+        )
+            marc_menu_scroll = 0;
+    }
+
+
+    int visible_end =
+        marc_menu_scroll +
+        GAME_LIST_VISIBLE_ITEMS;
+
+    if (
+        visible_end > game_count
+    )
+        visible_end = game_count;
+
+
     for (
-        int i = 0;
-        i < game_count;
+        int i = marc_menu_scroll;
+        i < visible_end;
         i++
     ) {
 
@@ -3264,9 +3326,66 @@ void show_catalogue() {
     }
 
 
+    if (
+        catalogue_selection < 0
+    )
+        catalogue_selection = 0;
+
+    if (
+        catalogue_selection >= game_count
+    )
+        catalogue_selection = game_count - 1;
+
+    if (
+        catalogue_scroll < 0
+    )
+        catalogue_scroll = 0;
+
+    if (
+        catalogue_selection < catalogue_scroll
+    )
+        catalogue_scroll = catalogue_selection;
+
+    if (
+        catalogue_selection >=
+        catalogue_scroll +
+        GAME_LIST_VISIBLE_ITEMS
+    )
+        catalogue_scroll =
+            catalogue_selection -
+            GAME_LIST_VISIBLE_ITEMS +
+            1;
+
+    if (
+        catalogue_scroll >
+        game_count -
+        GAME_LIST_VISIBLE_ITEMS
+    ) {
+
+        catalogue_scroll =
+            game_count -
+            GAME_LIST_VISIBLE_ITEMS;
+
+        if (
+            catalogue_scroll < 0
+        )
+            catalogue_scroll = 0;
+    }
+
+
+    int visible_end =
+        catalogue_scroll +
+        GAME_LIST_VISIBLE_ITEMS;
+
+    if (
+        visible_end > game_count
+    )
+        visible_end = game_count;
+
+
     for (
-        int i = 0;
-        i < game_count;
+        int i = catalogue_scroll;
+        i < visible_end;
         i++
     ) {
 
@@ -5236,6 +5355,7 @@ int main(void)
                     screen = 2;
 
                     catalogue_selection = 0;
+                    catalogue_scroll = 0;
 
                     show_catalogue();
 
@@ -5256,6 +5376,7 @@ int main(void)
                     screen = 4;
 
                     marc_selection = 0;
+                    marc_menu_scroll = 0;
 
                     marc_record_from_search = 0;
 
@@ -5544,6 +5665,13 @@ int main(void)
 
                     catalogue_selection++;
 
+                    if (
+                        catalogue_selection >=
+                        catalogue_scroll +
+                        GAME_LIST_VISIBLE_ITEMS
+                    )
+                        catalogue_scroll++;
+
                     show_catalogue();
                 }
 
@@ -5571,6 +5699,13 @@ int main(void)
                 ) {
 
                     marc_selection++;
+
+                    if (
+                        marc_selection >=
+                        marc_menu_scroll +
+                        GAME_LIST_VISIBLE_ITEMS
+                    )
+                        marc_menu_scroll++;
 
                     show_marc_menu();
                 }
@@ -5639,6 +5774,12 @@ int main(void)
 
                     catalogue_selection--;
 
+                    if (
+                        catalogue_selection <
+                        catalogue_scroll
+                    )
+                        catalogue_scroll--;
+
                     show_catalogue();
                 }
 
@@ -5665,6 +5806,12 @@ int main(void)
                 ) {
 
                     marc_selection--;
+
+                    if (
+                        marc_selection <
+                        marc_menu_scroll
+                    )
+                        marc_menu_scroll--;
 
                     show_marc_menu();
                 }
