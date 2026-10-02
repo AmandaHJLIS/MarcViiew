@@ -1327,6 +1327,10 @@ void scan_catalogue() {
         "sd:/private/wii/title"
     );
 
+    scan_sd_digital_titles(
+        "usb:/private/wii/title"
+    );
+
     if (
         game_count <
         MAX_GAMES
