@@ -1061,11 +1061,20 @@ void scan_storage(
             ]
         );
 
-        strncpy(
-            games[game_count].source,
-            storage_path,
-            sizeof(games[game_count].source) - 1
-        );
+        if (strcmp(storage_path, "sd:/wbfs") == 0)
+        {
+            strcpy(
+                games[game_count].source,
+                "SD"
+            );
+        }
+        else if (strcmp(storage_path, "usb:/wbfs") == 0)
+        {
+            strcpy(
+                games[game_count].source,
+                "USB"
+            );
+        }
 
         game_count++;
     }
