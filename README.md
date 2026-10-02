@@ -288,6 +288,27 @@ Current development areas include:
 
 The `imported-records-template` branch is therefore also the development baseline for the next API-refinement stage of MarcViiew.
 
+## Long-Term Planned Features
+
+The following ideas are planned as longer-term research and development areas rather than requirements for the current beta or initial stable release.
+
+### Wii User Interface Research
+
+* Further refinement of MarcViiew's Wii user interface and reusable UI components
+* Research into UI architecture and interaction patterns used by newer Wii homebrew projects, including **RiftWii**, to inform future MarcViiew UI development
+* Improved screen layout, navigation, text rendering, scrolling, and input handling
+
+### Wii/WiiWare File Structure Research
+
+* A file-structure viewer for exploring Wii and WiiWare content
+* Directory and file inspection, file sizes, binary/hexadecimal inspection, and other low-level file metadata
+* Tools for documenting unknown file structures, formats, relationships, and research observations
+* Comparative analysis of original and modified game files to support reproducible research
+* Research into WiiWare game file formats and modification workflows, with an initial focus on documenting and experimenting with individual titles
+* Application of library and information science principles to the preservation, organisation, metadata, and documentation of Wii and WiiWare reverse-engineering research
+
+These projects are intended to complement MarcViiew's existing catalogue and LIS focus. They are exploratory long-term goals and are not part of the current stable-release requirements.
+
 ## Beta Status
 
 MarcViiew is currently in **beta development**.
