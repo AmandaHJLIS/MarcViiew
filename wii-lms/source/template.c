@@ -84,8 +84,9 @@ static int marc_record_from_search = 0;
     Settings screens.
 
     0 = Reload SD / USB
-    1 = Reload Databases
-    2 = Credits
+    1 = Reload NAND
+    2 = Reload Databases
+    3 = Credits
 */
 static int settings_selection = 0;
 
@@ -3755,13 +3756,18 @@ void show_settings_menu() {
     );
 
     print_menu_item(
-        "Reload Databases",
+        "Reload NAND",
         settings_selection == 1
     );
 
     print_menu_item(
-        "Credits",
+        "Reload Databases",
         settings_selection == 2
+    );
+
+    print_menu_item(
+        "Credits",
+        settings_selection == 3
     );
 
 
@@ -3861,6 +3867,55 @@ void settings_reload_storage() {
         );
     }
 
+
+    show_settings_menu();
+}
+
+
+void settings_reload_nand() {
+
+    strcpy(
+        settings_status,
+        "Reloading NAND..."
+    );
+
+    show_settings_menu();
+
+    fflush(
+        stdout
+    );
+
+    usleep(
+        200000
+    );
+
+    /*
+        Rebuild the complete catalogue so titles removed from
+        NAND do not remain as stale entries. The NAND scanner
+        itself is refreshed as part of scan_catalogue().
+    */
+    scan_catalogue();
+
+    catalogue_selection = 0;
+    marc_selection = 0;
+
+    info_scroll = 0;
+    marc_scroll = 0;
+
+    search_selection = 0;
+    search_result_count = 0;
+
+    marc_record_from_search = 0;
+
+    encode_selection = 0;
+    encode_game_selection = 0;
+
+    snprintf(
+        settings_status,
+        sizeof(settings_status),
+        "NAND reloaded. %d game(s) found.",
+        game_count
+    );
 
     show_settings_menu();
 }
@@ -5234,7 +5289,7 @@ int main(void)
             ) {
 
                 if (
-                    settings_selection < 2
+                    settings_selection < 3
                 ) {
 
                     settings_selection++;
@@ -5260,12 +5315,20 @@ int main(void)
                     settings_selection == 1
                 ) {
 
-                    settings_reload_databases();
+                    settings_reload_nand();
 
                 }
 
                 else if (
                     settings_selection == 2
+                ) {
+
+                    settings_reload_databases();
+
+                }
+
+                else if (
+                    settings_selection == 3
                 ) {
 
                     screen = 10;
