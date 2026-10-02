@@ -9,6 +9,7 @@
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <fat.h>
+#include <ogc/es.h>
 
 #include <viiewlib/marc.h>
 
@@ -34,6 +35,7 @@
 
 #define CONSOLE_COLUMNS 80
 #define UI_WIDTH 50
+#define GAME_LIST_VISIBLE_ITEMS 15
 
 
 static void *xfb = NULL;
@@ -43,7 +45,11 @@ static int menu_selection = 0;
 static int screen = 0;
 
 static int catalogue_selection = 0;
+static int catalogue_scroll = 0;
+static int marc_menu_scroll = 0;
 static int game_count = 0;
+static int nand_title_count = 0;
+static int nand_game_count = 0;
 
 static int info_scroll = 0;
 
@@ -78,8 +84,9 @@ static int marc_record_from_search = 0;
     Settings screens.
 
     0 = Reload SD / USB
-    1 = Reload Databases
-    2 = Credits
+    1 = Reload NAND
+    2 = Reload Databases
+    3 = Credits
 */
 static int settings_selection = 0;
 
@@ -1003,6 +1010,131 @@ void scan_storage(
 }
 
 
+static void scan_nand_catalogue(void)
+{
+
+    u32 title_count = 0;
+    u64 *titles = NULL;
+    s32 result;
+    u32 i;
+
+    nand_title_count = 0;
+    nand_game_count = 0;
+
+    result = __ES_Init();
+
+    if (result < 0)
+        return;
+
+    result = ES_GetNumTitles(&title_count);
+
+    if (result < 0 || title_count == 0)
+    {
+        __ES_Close();
+        return;
+    }
+
+    titles = malloc(
+        (title_count + 1) * sizeof(u64)
+    );
+
+    if (titles == NULL)
+    {
+        __ES_Close();
+        return;
+    }
+
+    result = ES_GetTitles(
+        titles,
+        title_count
+    );
+
+    if (result < 0)
+    {
+        free(titles);
+        __ES_Close();
+        return;
+    }
+
+    for (
+        i = 0;
+        i < title_count;
+        i++
+    ) {
+
+        u64 title_id = titles[i];
+        u32 title_type =
+            (u32)(title_id >> 32);
+        u32 title_code =
+            (u32)title_id;
+        char code[7];
+
+        /*
+            00010001 contains downloadable Wii
+            titles, including WiiWare and Virtual
+            Console software.
+        */
+        if (title_type != 0x00010001)
+            continue;
+
+        code[0] = (char)((title_code >> 24) & 0xFF);
+        code[1] = (char)((title_code >> 16) & 0xFF);
+        code[2] = (char)((title_code >> 8) & 0xFF);
+        code[3] = (char)(title_code & 0xFF);
+        code[4] = '\0';
+        code[5] = '\0';
+        code[6] = '\0';
+
+        nand_title_count++;
+
+        /*
+            Only add titles which are represented in
+            the existing MarcViiew game database.
+            The database is loaded after this scan.
+        */
+        if (
+            game_count >= MAX_GAMES ||
+            find_game_by_id(code) >= 0
+        )
+            continue;
+
+        memset(
+            &games[game_count],
+            0,
+            sizeof(Game)
+        );
+
+        strncpy(
+            games[game_count].id,
+            code,
+            sizeof(games[game_count].id) - 1
+        );
+
+        strncpy(
+            games[game_count].title,
+            code,
+            sizeof(games[game_count].title) - 1
+        );
+
+        setup_game_metadata(
+            &games[game_count]
+        );
+
+        game_count++;
+        nand_game_count++;
+    }
+
+    free(titles);
+    __ES_Close();
+}
+
+
+/*
+    NAND scanning discovers installed WiiWare and
+    Virtual Console title IDs. Metadata is filled
+    afterwards by the normal game database loader.
+*/
+
 void scan_catalogue() {
 
     game_count = 0;
@@ -1020,6 +1152,8 @@ void scan_catalogue() {
             "usb:/wbfs"
         );
     }
+
+    scan_nand_catalogue();
 
     load_game_database();
 }
@@ -1061,7 +1195,9 @@ int reload_databases() {
     marc_record_from_search = 0;
 
     catalogue_selection = 0;
+    catalogue_scroll = 0;
     marc_selection = 0;
+    marc_menu_scroll = 0;
 
     info_scroll = 0;
     marc_scroll = 0;
@@ -2348,9 +2484,66 @@ void show_marc_menu() {
     }
 
 
+    if (
+        marc_selection < 0
+    )
+        marc_selection = 0;
+
+    if (
+        marc_selection >= game_count
+    )
+        marc_selection = game_count - 1;
+
+    if (
+        marc_menu_scroll < 0
+    )
+        marc_menu_scroll = 0;
+
+    if (
+        marc_selection < marc_menu_scroll
+    )
+        marc_menu_scroll = marc_selection;
+
+    if (
+        marc_selection >=
+        marc_menu_scroll +
+        GAME_LIST_VISIBLE_ITEMS
+    )
+        marc_menu_scroll =
+            marc_selection -
+            GAME_LIST_VISIBLE_ITEMS +
+            1;
+
+    if (
+        marc_menu_scroll >
+        game_count -
+        GAME_LIST_VISIBLE_ITEMS
+    ) {
+
+        marc_menu_scroll =
+            game_count -
+            GAME_LIST_VISIBLE_ITEMS;
+
+        if (
+            marc_menu_scroll < 0
+        )
+            marc_menu_scroll = 0;
+    }
+
+
+    int visible_end =
+        marc_menu_scroll +
+        GAME_LIST_VISIBLE_ITEMS;
+
+    if (
+        visible_end > game_count
+    )
+        visible_end = game_count;
+
+
     for (
-        int i = 0;
-        i < game_count;
+        int i = marc_menu_scroll;
+        i < visible_end;
         i++
     ) {
 
@@ -2552,6 +2745,7 @@ void show_marc_record()
 void show_imported_menu(void)
 {
     int i;
+    int visible_end;
     char line[80];
 
     printf("\x1b[2J\x1b[H");
@@ -2571,7 +2765,43 @@ void show_imported_menu(void)
         return;
     }
 
-    for (i = 0; i < imported_record_count; ++i)
+    /* Keep the selection within the imported-record list. */
+    if (imported_selection < 0)
+        imported_selection = 0;
+
+    if (imported_selection >= imported_record_count)
+        imported_selection = imported_record_count - 1;
+
+    /* Keep the selected record inside the visible 15-item window. */
+    if (imported_scroll < 0)
+        imported_scroll = 0;
+
+    if (imported_selection < imported_scroll)
+        imported_scroll = imported_selection;
+
+    if (imported_selection >=
+        imported_scroll + GAME_LIST_VISIBLE_ITEMS)
+        imported_scroll =
+            imported_selection -
+            GAME_LIST_VISIBLE_ITEMS + 1;
+
+    if (imported_scroll >
+        imported_record_count - GAME_LIST_VISIBLE_ITEMS)
+    {
+        imported_scroll =
+            imported_record_count - GAME_LIST_VISIBLE_ITEMS;
+
+        if (imported_scroll < 0)
+            imported_scroll = 0;
+    }
+
+    visible_end =
+        imported_scroll + GAME_LIST_VISIBLE_ITEMS;
+
+    if (visible_end > imported_record_count)
+        visible_end = imported_record_count;
+
+    for (i = imported_scroll; i < visible_end; ++i)
         print_menu_item(imported_records[i].title, i == imported_selection);
 
     printf("\n");
@@ -3264,9 +3494,66 @@ void show_catalogue() {
     }
 
 
+    if (
+        catalogue_selection < 0
+    )
+        catalogue_selection = 0;
+
+    if (
+        catalogue_selection >= game_count
+    )
+        catalogue_selection = game_count - 1;
+
+    if (
+        catalogue_scroll < 0
+    )
+        catalogue_scroll = 0;
+
+    if (
+        catalogue_selection < catalogue_scroll
+    )
+        catalogue_scroll = catalogue_selection;
+
+    if (
+        catalogue_selection >=
+        catalogue_scroll +
+        GAME_LIST_VISIBLE_ITEMS
+    )
+        catalogue_scroll =
+            catalogue_selection -
+            GAME_LIST_VISIBLE_ITEMS +
+            1;
+
+    if (
+        catalogue_scroll >
+        game_count -
+        GAME_LIST_VISIBLE_ITEMS
+    ) {
+
+        catalogue_scroll =
+            game_count -
+            GAME_LIST_VISIBLE_ITEMS;
+
+        if (
+            catalogue_scroll < 0
+        )
+            catalogue_scroll = 0;
+    }
+
+
+    int visible_end =
+        catalogue_scroll +
+        GAME_LIST_VISIBLE_ITEMS;
+
+    if (
+        visible_end > game_count
+    )
+        visible_end = game_count;
+
+
     for (
-        int i = 0;
-        i < game_count;
+        int i = catalogue_scroll;
+        i < visible_end;
         i++
     ) {
 
@@ -3469,13 +3756,18 @@ void show_settings_menu() {
     );
 
     print_menu_item(
-        "Reload Databases",
+        "Reload NAND",
         settings_selection == 1
     );
 
     print_menu_item(
-        "Credits",
+        "Reload Databases",
         settings_selection == 2
+    );
+
+    print_menu_item(
+        "Credits",
+        settings_selection == 3
     );
 
 
@@ -3575,6 +3867,55 @@ void settings_reload_storage() {
         );
     }
 
+
+    show_settings_menu();
+}
+
+
+void settings_reload_nand() {
+
+    strcpy(
+        settings_status,
+        "Reloading NAND..."
+    );
+
+    show_settings_menu();
+
+    fflush(
+        stdout
+    );
+
+    usleep(
+        200000
+    );
+
+    /*
+        Rebuild the complete catalogue so titles removed from
+        NAND do not remain as stale entries. The NAND scanner
+        itself is refreshed as part of scan_catalogue().
+    */
+    scan_catalogue();
+
+    catalogue_selection = 0;
+    marc_selection = 0;
+
+    info_scroll = 0;
+    marc_scroll = 0;
+
+    search_selection = 0;
+    search_result_count = 0;
+
+    marc_record_from_search = 0;
+
+    encode_selection = 0;
+    encode_game_selection = 0;
+
+    snprintf(
+        settings_status,
+        sizeof(settings_status),
+        "NAND reloaded. %d game(s) found.",
+        game_count
+    );
 
     show_settings_menu();
 }
@@ -4948,7 +5289,7 @@ int main(void)
             ) {
 
                 if (
-                    settings_selection < 2
+                    settings_selection < 3
                 ) {
 
                     settings_selection++;
@@ -4974,12 +5315,20 @@ int main(void)
                     settings_selection == 1
                 ) {
 
-                    settings_reload_databases();
+                    settings_reload_nand();
 
                 }
 
                 else if (
                     settings_selection == 2
+                ) {
+
+                    settings_reload_databases();
+
+                }
+
+                else if (
+                    settings_selection == 3
                 ) {
 
                     screen = 10;
@@ -5236,6 +5585,7 @@ int main(void)
                     screen = 2;
 
                     catalogue_selection = 0;
+                    catalogue_scroll = 0;
 
                     show_catalogue();
 
@@ -5256,6 +5606,7 @@ int main(void)
                     screen = 4;
 
                     marc_selection = 0;
+                    marc_menu_scroll = 0;
 
                     marc_record_from_search = 0;
 
@@ -5544,6 +5895,13 @@ int main(void)
 
                     catalogue_selection++;
 
+                    if (
+                        catalogue_selection >=
+                        catalogue_scroll +
+                        GAME_LIST_VISIBLE_ITEMS
+                    )
+                        catalogue_scroll++;
+
                     show_catalogue();
                 }
 
@@ -5571,6 +5929,13 @@ int main(void)
                 ) {
 
                     marc_selection++;
+
+                    if (
+                        marc_selection >=
+                        marc_menu_scroll +
+                        GAME_LIST_VISIBLE_ITEMS
+                    )
+                        marc_menu_scroll++;
 
                     show_marc_menu();
                 }
@@ -5639,6 +6004,12 @@ int main(void)
 
                     catalogue_selection--;
 
+                    if (
+                        catalogue_selection <
+                        catalogue_scroll
+                    )
+                        catalogue_scroll--;
+
                     show_catalogue();
                 }
 
@@ -5665,6 +6036,12 @@ int main(void)
                 ) {
 
                     marc_selection--;
+
+                    if (
+                        marc_selection <
+                        marc_menu_scroll
+                    )
+                        marc_menu_scroll--;
 
                     show_marc_menu();
                 }
