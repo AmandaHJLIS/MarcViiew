@@ -536,10 +536,27 @@ static void imported_add_filename(const char *filename)
     imported_record_count++;
 }
 
+static int imported_id_exists(const char *game_id)
+{
+    int i;
+
+    if (game_id == NULL)
+        return 0;
+
+    for (i = 0; i < imported_record_count; ++i)
+    {
+        if (strcmp(imported_records[i].game_id, game_id) == 0)
+            return 1;
+    }
+
+    return 0;
+}
+
 static void imported_scan_directory(const char *directory)
 {
     DIR *dir;
     struct dirent *entry;
+    int incoming = (strcmp(directory, "sd:/marcviiew_import") == 0);
 
     dir = opendir(directory);
 
@@ -551,9 +568,35 @@ static void imported_scan_directory(const char *directory)
         const char *extension = strrchr(entry->d_name, '.');
 
         if (entry->d_name[0] == '.' ||
-            imported_record_count >= MAX_IMPORTED_RECORDS ||
             extension == NULL ||
             strcmp(extension, ".mrc") != 0)
+            continue;
+
+        if (incoming)
+        {
+            char game_id[IMPORTED_RECORD_ID_LENGTH];
+            char imported_path[256];
+
+            if (imported_get_id(entry->d_name, game_id))
+            {
+                snprintf(
+                    imported_path,
+                    sizeof(imported_path),
+                    "sd:/marcviiew/imported/%s",
+                    entry->d_name
+                );
+
+                if (imported_id_exists(game_id) ||
+                    access(imported_path, F_OK) == 0)
+                {
+                    unlink(
+                        "sd:/marcviiew_import/%s"
+                    );
+                }
+            }
+        }
+
+        if (imported_record_count >= MAX_IMPORTED_RECORDS)
             continue;
 
         imported_add_filename(entry->d_name);
