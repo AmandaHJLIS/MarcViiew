@@ -1026,7 +1026,7 @@ int load_game_database() {
 
 static void add_game_source(Game *game, const char *source)
 {
-    if (game == NULL || source == NULL || source[0] == '\\0')
+    if (game == NULL || source == NULL || source[0] == '\0')
         return;
 
     if (strcmp(game->source, source) == 0)
@@ -1035,7 +1035,7 @@ static void add_game_source(Game *game, const char *source)
     if (strcmp(game->source, "Unknown") == 0)
     {
         strncpy(game->source, source, sizeof(game->source) - 1);
-        game->source[sizeof(game->source) - 1] = '\\0';
+        game->source[sizeof(game->source) - 1] = '\0';
         return;
     }
 
@@ -1098,7 +1098,7 @@ void scan_storage(
             discovered_id
         );
 
-        if (discovered_id[0] == '\\0')
+        if (discovered_id[0] == '\0')
             continue;
 
         if (strcmp(storage_path, "sd:/wbfs") == 0)
@@ -1126,7 +1126,7 @@ void scan_storage(
             discovered_id,
             sizeof(games[game_count].id) - 1
         );
-        games[game_count].id[sizeof(games[game_count].id) - 1] = '\\0';
+        games[game_count].id[sizeof(games[game_count].id) - 1] = '\0';
 
         setup_game_metadata(&games[game_count]);
         add_game_source(&games[game_count], source);
