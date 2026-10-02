@@ -589,9 +589,20 @@ static void imported_scan_directory(const char *directory)
                 if (imported_id_exists(game_id) ||
                     access(imported_path, F_OK) == 0)
                 {
-                    unlink(
-                        "sd:/marcviiew_import/%s"
-                    );
+                    {
+                        char incoming_path[256];
+
+                        snprintf(
+                            incoming_path,
+                            sizeof(incoming_path),
+                            "sd:/marcviiew_import/%s",
+                            entry->d_name
+                        );
+
+                        unlink(
+                            incoming_path
+                        );
+                    }
                 }
             }
         }
