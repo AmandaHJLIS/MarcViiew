@@ -4171,7 +4171,7 @@ void show_credits() {
     printf("\n");
 
     print_centered(
-        "Created by Amanda/Riruru. A library and Information Sciences student. Tested extensively by LilyFlower on VWii, provider external .mrc files."
+        "Created by Amanda/Riruru. A library and Information Sciences student. Tested extensively by LilyFlower on VWii, provider of external .mrc files."
     );
 
 
