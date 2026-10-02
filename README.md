@@ -348,3 +348,5 @@ GameTDB — for providing Wii game information and metadata.
 Library of Congress — for the MARC 21 bibliographic standards.
 
 ISO/TC 46 — for ISO 2709, Information and documentation — Format for information exchange.
+
+Lilyflower - for extensively testing MarcViiew on VWii, and providing external .mrc files.
