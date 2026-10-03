@@ -4448,75 +4448,6 @@ static const NandContentInfo *nand_find_content_info(u32 content_id)
     return NULL;
 }
 
-static int nand_find_shared_content(
-    const u8 *hash,
-    char *shared_name,
-    size_t shared_name_size
-)
-{
-    s32 fd;
-    s32 bytes_read;
-    u32 map_size;
-    u8 *map = NULL;
-    u32 offset;
-    int found = 0;
-
-    if (hash == NULL || shared_name == NULL || shared_name_size < 9)
-        return 0;
-
-    shared_name[0] = '\\0';
-
-    fd = ISFS_Open("/shared1/content.map", ISFS_OPEN_READ);
-    if (fd < 0)
-        return 0;
-
-    if (ISFS_GetFileStats(fd, &nand_file_stats) != ISFS_OK ||
-        nand_file_stats.file_length == 0 ||
-        nand_file_stats.file_length > 0x100000)
-    {
-        ISFS_Close(fd);
-        return 0;
-    }
-
-    map_size = nand_file_stats.file_length;
-
-    if ((map_size % 28) != 0)
-    {
-        ISFS_Close(fd);
-        return 0;
-    }
-
-    map = (u8 *)memalign(32, map_size);
-    if (map == NULL)
-    {
-        ISFS_Close(fd);
-        return 0;
-    }
-
-    bytes_read = ISFS_Read(fd, map, map_size);
-    ISFS_Close(fd);
-
-    if (bytes_read != (s32)map_size)
-    {
-        free(map);
-        return 0;
-    }
-
-    for (offset = 0; offset < map_size; offset += 28)
-    {
-        if (memcmp(&map[offset + 8], hash, 20) == 0)
-        {
-            memcpy(shared_name, &map[offset], 8);
-            shared_name[8] = '\\0';
-            found = 1;
-            break;
-        }
-    }
-
-    free(map);
-    return found;
-}
-
 static int nand_get_current_title_path(
     const char *path,
     char *title_path,
@@ -5243,7 +5174,7 @@ static void show_nand_file_info(void)
 
         printf("\n");
         print_centered("TMD Content Records");
-        print_centered("ID       Index Type   Storage");
+        print_centered("ID       Index Type   Size (bytes)  SHA-1");
 
         if (nand_tmd_content_count == 0)
         {
@@ -5267,57 +5198,47 @@ static void show_nand_file_info(void)
             {
                 const NandContentInfo *content_info =
                     &nand_tmd_contents[i];
-                char storage[48];
+                char hash_text[32];
 
-                if (content_info->type == 0x8001)
-                {
-                    char shared_name[9];
+                snprintf(
+                    hash_text,
+                    sizeof(hash_text),
+                    "%02x%02x%02x%02x...%02x%02x",
+                    content_info->hash[0],
+                    content_info->hash[1],
+                    content_info->hash[2],
+                    content_info->hash[3],
+                    content_info->hash[18],
+                    content_info->hash[19]
+                );
 
-                    if (nand_find_shared_content(
-                            content_info->hash,
-                            shared_name,
-                            sizeof(shared_name)))
-                    {
-                        snprintf(
-                            storage,
-                            sizeof(storage),
-                            "shared1/%s.app",
-                            shared_name
-                        );
-                    }
-                    else
-                    {
-                        strcpy(storage, "shared1/?");
-                    }
-                }
-                else if (content_info->type == 0x4001)
+                if ((content_info->size >> 32) == 0)
                 {
                     snprintf(
-                        storage,
-                        sizeof(storage),
-                        "title/%08x.app?",
-                        (unsigned int)content_info->content_id
+                        line,
+                        sizeof(line),
+                        "%08x   %-5u %-6x %-12u %s",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)content_info->size,
+                        hash_text
                     );
                 }
                 else
                 {
                     snprintf(
-                        storage,
-                        sizeof(storage),
-                        "content/%08x.app",
-                        (unsigned int)content_info->content_id
+                        line,
+                        sizeof(line),
+                        "%08x   %-5u %-6x %08x:%08x %s",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)(content_info->size >> 32),
+                        (unsigned int)(content_info->size & 0xFFFFFFFF),
+                        hash_text
                     );
                 }
-
-                snprintf(
-                    line,
-                    sizeof(line),
-                    "%08x   %-5u %-6x %s",
-                    (unsigned int)content_info->content_id,
-                    (unsigned int)content_info->index,
-                    (unsigned int)content_info->type,
-                    storage
-                );
 
                 print_centered(line);
             }
