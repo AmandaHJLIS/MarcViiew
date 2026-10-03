@@ -4717,6 +4717,9 @@ static void show_nand_browser(void)
         return;
     }
 
+    if (nand_status[0] != '\0')
+        print_centered(nand_status);
+
     snprintf(
         line,
         sizeof(line),
