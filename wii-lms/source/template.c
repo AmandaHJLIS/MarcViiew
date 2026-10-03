@@ -12,6 +12,7 @@
 #include <fat.h>
 #include <ogc/es.h>
 #include <ogc/isfs.h>
+#include "nand_ios.h"
 
 #include <viiewlib/marc.h>
 
@@ -3867,85 +3868,14 @@ static int nand_load_directory(const char *path)
     char *name_buffer;
     s32 result;
     u32 i;
-    int changed_uid = 0;
-    u64 original_uid = 0;
 
     if (path == NULL || path[0] == '\0')
         return 0;
 
-    /*
-     * NAND title data is protected by the IOS filesystem UID. When the
-     * browser enters another title, ISFS_ReadDir() can therefore fail
-     * even though the directory exists. ES_SetUID() is the IOS-supported
-     * mechanism used by Wii software to temporarily adopt a title's
-     * filesystem permissions.
-     *
-     * Keep this read-only: we only change the active UID, enumerate the
-     * directory, then restore the UID belonging to MarcViiew.
-     */
-    {
-        char title_type[16];
-        char title_id[16];
-
-        if (nand_get_title_context(
-                path,
-                title_type,
-                sizeof(title_type),
-                title_id,
-                sizeof(title_id)))
-        {
-            const char *slash;
-            unsigned long high;
-            unsigned long low;
-            u64 title_uid;
-
-            slash = strchr(title_id, '/');
-
-            /*
-             * nand_get_title_context() returns only the low title ID, so
-             * recover the high part directly from the path.
-             */
-            if (strncmp(path, "/title/", 7) == 0)
-            {
-                char high_text[9];
-                size_t high_length = strlen(title_type);
-
-                if (high_length == 8 &&
-                    strchr(title_type, '/') == NULL)
-                {
-                    memcpy(high_text, title_type, 8);
-                    high_text[8] = '\0';
-
-                    high = strtoul(high_text, NULL, 16);
-                    low = strtoul(title_id, NULL, 16);
-
-                    title_uid = ((u64)high << 32) | (u64)low;
-
-                    if (__ES_Init() >= 0 &&
-                        ES_GetTitleID(&original_uid) >= 0 &&
-                        ES_SetUID(title_uid) >= 0)
-                    {
-                        changed_uid = 1;
-                    }
-                }
-            }
-
-            (void)slash;
-        }
-    }
-
     result = ISFS_ReadDir(path, NULL, &entry_count);
 
     if (result != ISFS_OK)
-    {
-        if (changed_uid)
-        {
-            ES_SetUID(original_uid);
-            __ES_Close();
-        }
-
         return 0;
-    }
 
     nand_total_entry_count = entry_count;
     nand_entry_count = 0;
@@ -3953,15 +3883,7 @@ static int nand_load_directory(const char *path)
     nand_scroll = 0;
 
     if (entry_count == 0)
-    {
-        if (changed_uid)
-        {
-            ES_SetUID(original_uid);
-            __ES_Close();
-        }
-
         return 1;
-    }
 
     read_count = entry_count;
 
@@ -3971,8 +3893,6 @@ static int nand_load_directory(const char *path)
     /*
      * ISFS_ReadDir() returns a sequence of NUL-terminated names,
      * not a fixed-width array of NAND_ENTRY_NAME_LENGTH-byte slots.
-     * Allocate enough room for the maximum ISFS path-sized name
-     * for every entry, then advance through the buffer by strlen().
      */
     name_buffer =
         (char *)memalign(
@@ -3981,15 +3901,7 @@ static int nand_load_directory(const char *path)
         );
 
     if (name_buffer == NULL)
-    {
-        if (changed_uid)
-        {
-            ES_SetUID(original_uid);
-            __ES_Close();
-        }
-
         return 0;
-    }
 
     result =
         ISFS_ReadDir(
@@ -4001,122 +3913,90 @@ static int nand_load_directory(const char *path)
     if (result != ISFS_OK)
     {
         free(name_buffer);
-
-        if (changed_uid)
-        {
-            ES_SetUID(original_uid);
-            __ES_Close();
-        }
-
         return 0;
     }
 
     {
         const char *name = name_buffer;
 
-        for (i = 0; i < read_count; ++i)
+        for (i = 0; i < read_count && nand_entry_count < NAND_MAX_ENTRIES; ++i)
         {
             NandEntry *entry = &nand_entries[nand_entry_count];
             u32 child_count = 0;
-        s32 fd;
+            s32 fd;
 
-        memset(entry, 0, sizeof(*entry));
+            memset(entry, 0, sizeof(*entry));
 
-        snprintf(
-            entry->name,
-            sizeof(entry->name),
-            "%s",
-            name
-        );
-
-        if (strcmp(path, "/") == 0)
-        {
             snprintf(
-                entry->path,
-                sizeof(entry->path),
-                "/%s",
-                entry->name
+                entry->name,
+                sizeof(entry->name),
+                "%s",
+                name
             );
-        }
-        else
-        {
-            snprintf(
-                entry->path,
-                sizeof(entry->path),
-                "%s/%s",
-                path,
-                entry->name
-            );
-        }
 
-        /*
-         * ISFS_ReadDir() does not return a type flag. A successful
-         * directory read identifies directories; files are then
-         * inspected read-only with ISFS_Open/GetFileStats.
-         *
-         * Some system-owned NAND directories can be enumerated at
-         * the root but refuse a normal ReadDir() probe from a Broadway
-         * title. Recognise the standard root directories explicitly
-         * so they are not misleadingly presented as unknown files.
-         */
-        if (ISFS_ReadDir(entry->path, NULL, &child_count) == ISFS_OK)
-        {
-            entry->type = NAND_ENTRY_DIRECTORY;
-            entry->size = child_count;
-        }
-        else if (
-            (strcmp(entry->name, "content") == 0 ||
-             strcmp(entry->name, "data") == 0) &&
-            strstr(path, "/title/") == path
-        )
-        {
-            /*
-             * Wii title directories conventionally contain content and
-             * data subdirectories. Some title-owned directories do not
-             * permit a normal ISFS_ReadDir() probe from another title,
-             * so recognise these names explicitly while keeping the
-             * browser strictly read-only.
-             */
-            entry->type = NAND_ENTRY_DIRECTORY;
-            entry->size = 0;
-        }
-        else if (nand_is_known_directory(path, entry->name))
-        {
-            entry->type = NAND_ENTRY_NOACCESS;
-            entry->size = 0;
-        }
-        else
-        {
-            fd = ISFS_Open(entry->path, ISFS_OPEN_READ);
-
-            if (fd >= 0)
+            if (strcmp(path, "/") == 0)
             {
-                if (ISFS_GetFileStats(fd, &nand_file_stats) == ISFS_OK)
-                {
-                    entry->type = NAND_ENTRY_FILE;
-                    entry->size = nand_file_stats.file_length;
-                }
-
-                ISFS_Close(fd);
+                snprintf(
+                    entry->path,
+                    sizeof(entry->path),
+                    "/%s",
+                    entry->name
+                );
+            }
+            else
+            {
+                snprintf(
+                    entry->path,
+                    sizeof(entry->path),
+                    "%s/%s",
+                    path,
+                    entry->name
+                );
             }
 
-            if (entry->type == 0)
-                entry->type = NAND_ENTRY_UNKNOWN;
-        }
+            /*
+             * A successful ReadDir() probe identifies a directory.
+             * If the probe is denied, try opening it as a file. This
+             * keeps the browser honest: inaccessible entries are shown
+             * as "no access" instead of pretending they are empty.
+             */
+            if (ISFS_ReadDir(entry->path, NULL, &child_count) == ISFS_OK)
+            {
+                entry->type = NAND_ENTRY_DIRECTORY;
+                entry->size = child_count;
+            }
+            else
+            {
+                fd = ISFS_Open(entry->path, ISFS_OPEN_READ);
+
+                if (fd >= 0)
+                {
+                    if (ISFS_GetFileStats(fd, &nand_file_stats) == ISFS_OK)
+                    {
+                        entry->type = NAND_ENTRY_FILE;
+                        entry->size = nand_file_stats.file_length;
+                    }
+
+                    ISFS_Close(fd);
+                }
+
+                if (entry->type == 0)
+                {
+                    if (nand_is_known_directory(path, entry->name))
+                        entry->type = NAND_ENTRY_NOACCESS;
+                    else
+                        entry->type = NAND_ENTRY_UNKNOWN;
+
+                    entry->size = 0;
+                }
+            }
 
             nand_entry_count++;
-
             name += strlen(name) + 1;
         }
     }
 
     free(name_buffer);
-
-    if (changed_uid)
-    {
-        ES_SetUID(original_uid);
-        __ES_Close();
-    }
 
     return 1;
 }
@@ -7260,6 +7140,33 @@ int main(void)
 
                     if (!nand_initialized)
                     {
+                        int patch_result = nand_ios_enable_access();
+
+                        if (patch_result > 0)
+                        {
+                            snprintf(
+                                nand_status,
+                                sizeof(nand_status),
+                                "IOS NAND permissions enabled."
+                            );
+                        }
+                        else if (patch_result == 0)
+                        {
+                            snprintf(
+                                nand_status,
+                                sizeof(nand_status),
+                                "IOS NAND permission patch not found."
+                            );
+                        }
+                        else
+                        {
+                            snprintf(
+                                nand_status,
+                                sizeof(nand_status),
+                                "AHBPROT unavailable; protected entries may be inaccessible."
+                            );
+                        }
+
                         s32 result = ISFS_Initialize();
 
                         if (result != ISFS_OK)
