@@ -5522,6 +5522,14 @@ int main(void)
             if (input & INPUT_BACK)
             {
                 screen = 13;
+
+                /*
+                 * Refresh the imported-record index when returning
+                 * from a record viewer so newly added .mrc files are
+                 * visible immediately.
+                 */
+                scan_imported_records();
+
                 show_imported_menu();
             }
 
@@ -5910,6 +5918,15 @@ int main(void)
                     screen = 13;
                     imported_selection = 0;
                     imported_scroll = 0;
+
+                    /*
+                     * Refresh the imported-record index whenever the
+                     * Imported Records screen is entered. This allows
+                     * newly copied .mrc files in sd:/marcviiew_import
+                     * to appear without restarting MarcViiew.
+                     */
+                    scan_imported_records();
+
                     show_imported_menu();
 
                 }
