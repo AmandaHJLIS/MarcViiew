@@ -241,12 +241,12 @@ The major catalogue-discovery and beta feature work is substantially implemented
 
 Current development areas include:
 
-* Additional MARC 21 validation and interoperability work
-* Further ISO 2709 compatibility testing
+* Further MARC 21 validation and interoperability work
+* Further ISO 2709 compatibility and edge-case testing
 * Catalogue and Wii user-interface refinement
 * Additional metadata research and cataloguing-profile research
 * Wii performance and memory optimisation
-* Hardware regression testing
+* Continued hardware regression testing
 * Future experimental functionality before stable integration
 
 ## Long-Term Planned Features
