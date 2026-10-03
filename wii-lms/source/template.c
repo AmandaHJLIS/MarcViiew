@@ -574,43 +574,62 @@ static void imported_scan_directory(const char *directory)
             strcmp(extension, ".mrc") != 0)
             continue;
 
+        if (imported_record_count >= MAX_IMPORTED_RECORDS)
+            continue;
+
         if (incoming)
         {
             char game_id[IMPORTED_RECORD_ID_LENGTH];
+            char incoming_path[256];
             char imported_path[256];
 
-            if (imported_get_id(entry->d_name, game_id))
+            /*
+             * Imported records use the marcviiew_GAMEID.mrc naming
+             * convention. New incoming records are moved into the
+             * persistent collection as soon as they are discovered.
+             */
+            if (!imported_get_id(entry->d_name, game_id))
+                continue;
+
+            snprintf(
+                incoming_path,
+                sizeof(incoming_path),
+                "sd:/marcviiew_import/%s",
+                entry->d_name
+            );
+
+            snprintf(
+                imported_path,
+                sizeof(imported_path),
+                "sd:/marcviiew/imported/%s",
+                entry->d_name
+            );
+
+            /*
+             * A record already present in the persistent collection
+             * is a duplicate. Remove only the incoming duplicate.
+             */
+            if (imported_id_exists(game_id) ||
+                access(imported_path, F_OK) == 0)
             {
-                snprintf(
-                    imported_path,
-                    sizeof(imported_path),
-                    "sd:/marcviiew/imported/%s",
-                    entry->d_name
-                );
-
-                if (imported_id_exists(game_id) ||
-                    access(imported_path, F_OK) == 0)
-                {
-                    {
-                        char incoming_path[256];
-
-                        snprintf(
-                            incoming_path,
-                            sizeof(incoming_path),
-                            "sd:/marcviiew_import/%s",
-                            entry->d_name
-                        );
-
-                        unlink(
-                            incoming_path
-                        );
-                    }
-                }
+                unlink(incoming_path);
+                continue;
             }
-        }
 
-        if (imported_record_count >= MAX_IMPORTED_RECORDS)
+            /*
+             * Move the new record into persistent storage. If the
+             * move fails, still index the incoming file so it remains
+             * visible and can be opened.
+             */
+            if (rename(incoming_path, imported_path) != 0)
+            {
+                imported_add_filename(entry->d_name);
+                continue;
+            }
+
+            imported_add_filename(entry->d_name);
             continue;
+        }
 
         imported_add_filename(entry->d_name);
     }
