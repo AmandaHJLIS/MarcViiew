@@ -673,14 +673,15 @@ static void imported_scan_directory(const char *directory)
                 imported_persistent_id_exists(game_id) ||
                 access(imported_path, F_OK) == 0)
             {
-                if (unlink(incoming_path) != 0)
-                {
-                    /*
-                     * Keep scanning even if cleanup fails. The
-                     * persistent record remains the authoritative copy.
-                     */
-                }
-
+                /*
+                 * Incoming records are temporary. Once a matching
+                 * persistent record exists, remove the incoming copy.
+                 *
+                 * Use remove() here rather than relying on the POSIX
+                 * unlink() wrapper, since MarcViiew runs through libfat
+                 * on Wii SD/USB filesystems.
+                 */
+                remove(incoming_path);
                 continue;
             }
 
@@ -691,7 +692,16 @@ static void imported_scan_directory(const char *directory)
              */
             if (rename(incoming_path, imported_path) != 0)
             {
-                imported_add_filename(entry->d_name);
+                /*
+                 * If the move fails because a persistent copy appeared
+                 * between the checks above, remove the incoming copy.
+                 * Otherwise keep it visible for another import attempt.
+                 */
+                if (access(imported_path, F_OK) == 0)
+                    remove(incoming_path);
+                else
+                    imported_add_filename(entry->d_name);
+
                 continue;
             }
 
