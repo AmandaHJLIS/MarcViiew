@@ -7344,18 +7344,34 @@ int main(void)
 
                         if (patch_result > 0)
                         {
+                            char patch_status[96];
+
+                            nand_ios_get_patch_status(
+                                patch_status,
+                                sizeof(patch_status)
+                            );
+
                             snprintf(
                                 nand_status,
                                 sizeof(nand_status),
-                                "IOS NAND permissions enabled."
+                                "IOS patches: %s",
+                                patch_status
                             );
                         }
                         else if (patch_result == 0)
                         {
+                            char patch_status[96];
+
+                            nand_ios_get_patch_status(
+                                patch_status,
+                                sizeof(patch_status)
+                            );
+
                             snprintf(
                                 nand_status,
                                 sizeof(nand_status),
-                                "IOS NAND permission patch not found."
+                                "IOS patch signatures not found: %s",
+                                patch_status
                             );
                         }
                         else
