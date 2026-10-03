@@ -128,7 +128,7 @@ int marcviiew_encode_database(
         );
 
 
-        if (status != 0)
+        if (status != MARC_SUCCESS)
         {
             fclose(output);
             fclose(input);
@@ -317,7 +317,7 @@ int marcviiew_encode_game(
             marc_record_free(record);
 
 
-            if (status != 0)
+            if (status != MARC_SUCCESS)
             {
                 fclose(output);
                 fclose(input);

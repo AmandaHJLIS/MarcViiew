@@ -402,7 +402,7 @@ static int finish_current_field(
     if (marc_record_add_field(
             record,
             current->field
-        ) != 0)
+        ) != MARC_SUCCESS)
     {
         marc_field_free(
             current->field
@@ -658,7 +658,7 @@ static int parse_record_body(
                     record,
                     current.tag,
                     value
-                ) != 0)
+                ) != MARC_SUCCESS)
             {
                 free(line);
 
@@ -825,7 +825,7 @@ static int parse_record_body(
                     current.field,
                     code,
                     value
-                ) != 0)
+                ) != MARC_SUCCESS)
             {
                 free(line);
 

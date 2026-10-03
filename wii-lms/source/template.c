@@ -2187,7 +2187,7 @@ static MARC_Record *read_mrc_record(FILE *file)
     if (record == NULL)
         return NULL;
 
-    if (marc_record_read(record, file) != 0)
+    if (marc_record_read(record, file) != MARC_SUCCESS)
     {
         marc_record_free(record);
         return NULL;
