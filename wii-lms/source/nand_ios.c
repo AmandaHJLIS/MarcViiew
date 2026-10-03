@@ -1,12 +1,13 @@
 #include <gccore.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "nand_ios.h"
 
 #define MEM_REG_BASE 0x0D8B4000
 
 #define HW_AHBPROT ((volatile u32 *)0xCD800064)
-#define MEM_PROT    ((volatile u32 *)0xCD8B420A)
+#define MEM_PROT    (0x0D8B420A)
 #define IOS_ENTRY_PTR ((volatile u32 *)0x80003134)
 #define IOS_PATCH_END ((u8 *)0x94000000)
 
@@ -62,10 +63,15 @@ static const u8 setuid_patch[] =
 };
 
 static int nand_ios_access_enabled = 0;
+static int nand_patch_isfs = 0;
+static int nand_patch_setuid = 0;
+static int nand_patch_identify = 0;
+static int nand_patch_hash = 0;
+static int nand_patch_new_hash = 0;
 
 static void disable_memory_protection(void)
 {
-    *MEM_PROT = *MEM_PROT & 0x0000FFFF;
+    write32(MEM_PROT, read32(MEM_PROT) & 0x0000FFFF);
 }
 
 static int apply_patch(const u8 *old, size_t old_size,
@@ -128,21 +134,12 @@ static int apply_hash_patches(void)
         1
     );
 
-    found += apply_patch(
-        new_hash_old,
-        sizeof(new_hash_old),
-        hash_patch,
-        sizeof(hash_patch),
-        1
-    );
+    nand_patch_hash = apply_patch(hash_old, sizeof(hash_old), hash_patch, sizeof(hash_patch), 1);
+    nand_patch_new_hash = apply_patch(new_hash_old, sizeof(new_hash_old), hash_patch, sizeof(hash_patch), 1);
 
-    found += apply_patch(
-        setuid_old,
-        sizeof(setuid_old),
-        setuid_patch,
-        sizeof(setuid_patch),
-        0
-    );
+    nand_patch_setuid = apply_patch(setuid_old, sizeof(setuid_old), setuid_patch, sizeof(setuid_patch), 0);
+
+    found += nand_patch_hash + nand_patch_new_hash + nand_patch_setuid;
 
     return found;
 }
@@ -152,20 +149,34 @@ int nand_ios_enable_access(void)
     int found;
 
     if (nand_ios_access_enabled)
-        return 1;
+        return nand_patch_isfs + nand_patch_identify + nand_patch_hash + nand_patch_new_hash + nand_patch_setuid;
 
     if (*HW_AHBPROT != 0xFFFFFFFF)
         return -1;
 
     disable_memory_protection();
 
-    found = apply_isfs_permission_patch();
-    found += apply_es_identify_patch();
-    found += apply_hash_patches();
+    nand_patch_isfs = apply_isfs_permission_patch();
+    nand_patch_identify = apply_es_identify_patch();
+    nand_patch_hash = 0;
+    nand_patch_new_hash = 0;
+    nand_patch_setuid = 0;
+    found = nand_patch_isfs + nand_patch_identify + apply_hash_patches();
 
     if (found <= 0)
         return 0;
 
     nand_ios_access_enabled = 1;
     return found;
+}
+
+void nand_ios_get_patch_status(char *buffer, size_t size)
+{
+    if (buffer == NULL || size == 0)
+        return;
+
+    snprintf(buffer, size,
+             "ISFS:%d UID:%d ID:%d HASH:%d NEW:%d",
+             nand_patch_isfs, nand_patch_setuid, nand_patch_identify,
+             nand_patch_hash, nand_patch_new_hash);
 }
