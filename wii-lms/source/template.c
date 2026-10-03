@@ -4321,6 +4321,12 @@ static int nand_read_title_name(
     return 0;
 }
 
+static int nand_decode_title_id(
+    const char *title_id,
+    char *decoded,
+    size_t decoded_size
+);
+
 static const char *nand_database_title(const char *title_id)
 {
     int existing;
