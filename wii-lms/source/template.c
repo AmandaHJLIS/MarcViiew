@@ -4067,6 +4067,76 @@ static int nand_get_title_context(
     return 1;
 }
 
+static const char *nand_title_type_name(const char *title_type)
+{
+    if (title_type == NULL)
+        return "Unknown";
+
+    if (strcmp(title_type, "00000001") == 0)
+        return "Essential system title";
+
+    if (strcmp(title_type, "00010000") == 0)
+        return "Disc-based title";
+
+    if (strcmp(title_type, "00010001") == 0)
+        return "Downloadable channel";
+
+    if (strcmp(title_type, "00010002") == 0)
+        return "System channel";
+
+    if (strcmp(title_type, "00010004") == 0)
+        return "Game channel";
+
+    if (strcmp(title_type, "00010005") == 0)
+        return "Downloadable content";
+
+    if (strcmp(title_type, "00010008") == 0)
+        return "Hidden channel";
+
+    return "Unknown title type";
+}
+
+static int nand_decode_title_id(
+    const char *title_id,
+    char *decoded,
+    size_t decoded_size
+)
+{
+    size_t i;
+
+    if (title_id == NULL ||
+        decoded == NULL ||
+        decoded_size < 5 ||
+        strlen(title_id) != 8)
+        return 0;
+
+    for (i = 0; i < 8; ++i)
+    {
+        if (!isxdigit((unsigned char)title_id[i]))
+            return 0;
+    }
+
+    for (i = 0; i < 4; ++i)
+    {
+        char hex_pair[3];
+        unsigned int value;
+
+        hex_pair[0] = title_id[i * 2];
+        hex_pair[1] = title_id[i * 2 + 1];
+        hex_pair[2] = '\0';
+
+        value = (unsigned int)strtoul(hex_pair, NULL, 16);
+
+        if (value < 0x20 || value > 0x7E)
+            return 0;
+
+        decoded[i] = (char)value;
+    }
+
+    decoded[4] = '\0';
+    return 1;
+}
+
 static void nand_format_size(u32 size, char *output, size_t output_size)
 {
     if (size >= 1024 * 1024)
@@ -4206,13 +4276,39 @@ static void show_nand_browser(void)
                 title_id,
                 sizeof(title_id)))
         {
+            char title_code[8];
+
             snprintf(
                 line,
                 sizeof(line),
-                "Title type: %s    Title ID: %s",
+                "Title type: %s (%s)",
                 title_type,
-                title_id
+                nand_title_type_name(title_type)
             );
+            print_centered(line);
+
+            if (nand_decode_title_id(
+                    title_id,
+                    title_code,
+                    sizeof(title_code)))
+            {
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title ID: %s (%s)",
+                    title_id,
+                    title_code
+                );
+            }
+            else
+            {
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title ID: %s",
+                    title_id
+                );
+            }
             print_centered(line);
         }
     }
@@ -4359,13 +4455,39 @@ static void show_nand_file_info(void)
                 title_id,
                 sizeof(title_id)))
         {
+            char title_code[8];
+
             snprintf(
                 line,
                 sizeof(line),
-                "Title type: %s    Title ID: %s",
+                "Title type: %s (%s)",
                 title_type,
-                title_id
+                nand_title_type_name(title_type)
             );
+            print_centered(line);
+
+            if (nand_decode_title_id(
+                    title_id,
+                    title_code,
+                    sizeof(title_code)))
+            {
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title ID: %s (%s)",
+                    title_id,
+                    title_code
+                );
+            }
+            else
+            {
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title ID: %s",
+                    title_id
+                );
+            }
             print_centered(line);
         }
     }
