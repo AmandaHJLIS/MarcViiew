@@ -25,6 +25,20 @@ static const u8 isfs_permissions_patch[] =
 };
 
 /* ES_Identify: replace the conditional branch at offset 2 with NOPs. */
+static const u8 hash_old[] =
+{
+    0x20, 0x07, 0x23, 0xA2
+};
+
+static const u8 new_hash_old[] =
+{
+    0x20, 0x07, 0x4B, 0x0B
+};
+
+static const u8 hash_patch[] =
+{
+    0x00
+};
 static const u8 es_identify_old[] =
 {
     0x28, 0x03, 0xD1, 0x23
@@ -90,6 +104,28 @@ static int apply_es_identify_patch(void)
     );
 }
 
+static int apply_hash_patches(void)
+{
+    int found = 0;
+
+    found += apply_patch(
+        hash_old,
+        sizeof(hash_old),
+        hash_patch,
+        sizeof(hash_patch),
+        1
+    );
+
+    found += apply_patch(
+        new_hash_old,
+        sizeof(new_hash_old),
+        hash_patch,
+        sizeof(hash_patch),
+        1
+    );
+
+    return found;
+}
 
 int nand_ios_enable_access(void)
 {
@@ -105,6 +141,7 @@ int nand_ios_enable_access(void)
 
     found = apply_isfs_permission_patch();
     found += apply_es_identify_patch();
+    found += apply_hash_patches();
 
     if (found <= 0)
         return 0;
