@@ -49,6 +49,18 @@ static const u8 es_identify_patch[] =
     0x00, 0x00
 };
 
+/* ES_SetUID: bypass the caller/UID check so the browser can inspect
+ * title-owned ISFS directories without modifying NAND. */
+static const u8 setuid_old[] =
+{
+    0xD1, 0x2A, 0x1C, 0x39
+};
+
+static const u8 setuid_patch[] =
+{
+    0x46, 0xC0
+};
+
 static int nand_ios_access_enabled = 0;
 
 static void disable_memory_protection(void)
@@ -122,6 +134,14 @@ static int apply_hash_patches(void)
         hash_patch,
         sizeof(hash_patch),
         1
+    );
+
+    found += apply_patch(
+        setuid_old,
+        sizeof(setuid_old),
+        setuid_patch,
+        sizeof(setuid_patch),
+        0
     );
 
     return found;
