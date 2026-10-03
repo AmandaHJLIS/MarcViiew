@@ -3939,8 +3939,13 @@ static int nand_load_directory(const char *path)
          * ISFS access; do not overwrite the identity it establishes
          * with ES_SetUID().
          */
-        if (!nand_identify_title(path))
-            return 0;
+        /*
+         * Identification is an aid to ISFS permissions, not a prerequisite
+         * for browsing. Some system/title paths can legitimately reject
+         * ES_Identify even though their parent directory is readable.
+         * Let ISFS report the actual access result below.
+         */
+        nand_identify_title(path);
     }
     else
     {
