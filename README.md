@@ -1,5 +1,7 @@
 # MarcViiew
 
+**Current release: 0.7.0-beta**
+
 <img width="370" height="67" alt="MarcViiew logo" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
 
 MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
@@ -270,23 +272,18 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Current Development Focus
 
-The major catalogue-discovery and beta feature work for this experimental branch is now substantially implemented and has been tested on real Wii hardware.
+The major catalogue-discovery, imported-record, MARC 21, and ViiewLib integration work for the 0.7.0-beta milestone has been implemented and tested on real Wii hardware.
 
-The next development milestone is focused on refinement of the underlying API and the catalogue workflow rather than adding another large discovery subsystem.
+The next development stage is focused on refinement rather than another large discovery subsystem. Current areas include:
 
-Current development areas include:
+* Further MARC 21 validation and interoperability work
+* Additional metadata research and cataloguing-profile refinement
+* Catalogue and Wii user-interface refinement
+* Performance and memory optimisation
+* Additional Wii hardware regression testing
+* Longer-term Wii/WiiWare preservation and file-structure research
 
-* ViiewLib/API refinement and documentation
-* Additional MARC 21 validation and interoperability work
-* Further ISO 2709 compatibility testing
-* Further imported-record workflow refinement
-* Final catalogue and Wii user-interface refinement
-* Additional metadata improvements where they provide clear catalogue value
-* Wii performance and memory optimisation
-* Hardware regression testing
-* Reviewing experimental changes before they are considered for `main`
-
-The `imported-records-template` branch is therefore also the development baseline for the next API-refinement stage of MarcViiew.
+New Wii application source changes are developed experimentally and hardware-tested before they are considered for `main`.
 
 ## Long-Term Planned Features
 
@@ -311,17 +308,15 @@ These projects are intended to complement MarcViiew's existing catalogue and LIS
 
 ## Beta Status
 
-MarcViiew is currently in **beta development**.
+MarcViiew is currently in **beta development**, with **0.7.0-beta** representing the current release milestone.
 
-The current experimental state corresponds to the **0.6.0-beta development milestone**, following the feature-focused 0.5.0-beta milestone.
+The current release contains functional MARC 21 and ISO 2709 support through ViiewLib, imported MARC record handling, Wii software discovery across multiple storage sources, and hardware-tested integration with the refined ViiewLib API.
 
-The `imported-records-template` branch is an experimental development branch rather than a stable release. Features on this branch should be considered provisional until they have been built and tested on real Wii hardware.
-
-MarcViiew contains functional MARC 21 and ISO 2709 support through ViiewLib, including `.mrc` encoding and Wii hardware testing. However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
+However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
 
 ## Setup
 
-The experimental branch uses the same general Wii application setup as the stable project.
+The 0.7.0-beta release uses the standard Wii application setup.
 
 1. Build the Wii application using the project's devkitPPC/libogc development environment.
 
@@ -342,7 +337,7 @@ The experimental branch uses the same general Wii application setup as the stabl
 
 5. Open the Homebrew Channel and launch MarcViiew.
 
-Because this branch contains experimental source changes, a successful build should be followed by hardware testing before the branch is treated as stable.
+For source builds, hardware testing is recommended after compilation. The 0.7.0-beta milestone has already been validated on real Wii hardware.
 
 ## Development Notes
 
@@ -360,7 +355,7 @@ The project intentionally separates:
 
 This separation allows individual parts of the catalogue workflow to be developed and tested without making the Wii application responsible for assumptions that belong in the metadata or MARC generation pipeline.
 
-The experimental branch is specifically where these boundaries are tested and refined before stable integration.
+Experimental development branches may be used to test future changes before they are integrated into the stable branch.
 
 ## License
 
