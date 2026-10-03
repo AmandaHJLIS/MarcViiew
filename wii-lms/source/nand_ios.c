@@ -126,15 +126,13 @@ static int apply_hash_patches(void)
 {
     int found = 0;
 
-    found += apply_patch(
+    nand_patch_hash = apply_patch(
         hash_old,
         sizeof(hash_old),
         hash_patch,
         sizeof(hash_patch),
         1
     );
-
-    nand_patch_hash = apply_patch(hash_old, sizeof(hash_old), hash_patch, sizeof(hash_patch), 1);
     nand_patch_new_hash = apply_patch(new_hash_old, sizeof(new_hash_old), hash_patch, sizeof(hash_patch), 1);
 
     nand_patch_setuid = apply_patch(setuid_old, sizeof(setuid_old), setuid_patch, sizeof(setuid_patch), 0);
