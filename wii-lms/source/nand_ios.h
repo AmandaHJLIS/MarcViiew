@@ -1,6 +1,8 @@
 #ifndef MARCVIIEW_NAND_IOS_H
 #define MARCVIIEW_NAND_IOS_H
 
+#include <stddef.h>
+
 /*
  * Enable read access to protected Wii NAND paths by patching the
  * currently running IOS in memory.
@@ -15,6 +17,6 @@
  */
 int nand_ios_enable_access(void);
 
-#endif
-
 void nand_ios_get_patch_status(char *buffer, size_t size);
+
+#endif
