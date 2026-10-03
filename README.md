@@ -243,12 +243,11 @@ Current development areas include:
 
 * Additional MARC 21 validation and interoperability work
 * Further ISO 2709 compatibility testing
-* Further imported-record workflow refinement
-* Final catalogue and Wii user-interface refinement
-* Additional metadata research where it provides clear catalogue value
+* Catalogue and Wii user-interface refinement
+* Additional metadata research and cataloguing-profile research
 * Wii performance and memory optimisation
 * Hardware regression testing
-* Future experimental functionality before stable integration.
+* Future experimental functionality before stable integration
 
 ## Long-Term Planned Features
 
