@@ -602,9 +602,6 @@ static void imported_scan_directory(const char *directory)
             strcmp(extension, ".mrc") != 0)
             continue;
 
-        if (imported_record_count >= MAX_IMPORTED_RECORDS)
-            continue;
-
         if (incoming)
         {
             char game_id[IMPORTED_RECORD_ID_LENGTH];
@@ -655,9 +652,14 @@ static void imported_scan_directory(const char *directory)
                 continue;
             }
 
-            imported_add_filename(entry->d_name);
+            if (imported_record_count < MAX_IMPORTED_RECORDS)
+                imported_add_filename(entry->d_name);
+
             continue;
         }
+
+        if (imported_record_count >= MAX_IMPORTED_RECORDS)
+            continue;
 
         imported_add_filename(entry->d_name);
     }
