@@ -3852,6 +3852,14 @@ void show_encode_game_menu() {
 static void show_nand_browser(void);
 static void show_nand_file_info(void);
 
+static int nand_get_title_context(
+    const char *path,
+    char *title_type,
+    size_t title_type_size,
+    char *title_id,
+    size_t title_id_size
+);
+
 static int nand_load_directory(const char *path)
 {
     u32 entry_count = 0;
