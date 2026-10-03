@@ -1,14 +1,14 @@
 #include <gccore.h>
-#include <ogc/machine/processor.h>
 #include <string.h>
 
 #include "nand_ios.h"
 
 #define MEM_REG_BASE 0x0D8B4000
-#define MEM_PROT     (MEM_REG_BASE + 0x20A)
 
-#define IOS_PATCH_START_PTR ((u8 *)(*((volatile u32 *)0x80003134)))
-#define IOS_PATCH_END_PTR   ((u8 *)0x94000000)
+#define HW_AHBPROT ((volatile u32 *)0xCD800064)
+#define MEM_PROT    ((volatile u16 *)0xCD8B420A)
+#define IOS_PATCH_START ((u8 *)0x93400000)
+#define IOS_PATCH_END   ((u8 *)0x94000000)
 
 /*
  * Standard Wii IOS ISFS permission patch used by established Wii
@@ -28,16 +28,13 @@ static int nand_ios_access_enabled = 0;
 
 static void disable_memory_protection(void)
 {
-    write32(
-        MEM_PROT,
-        read32(MEM_PROT) & 0x0000FFFF
-    );
+    *MEM_PROT = 0;
 }
 
 static int apply_isfs_permission_patch(void)
 {
-    u8 *ptr = IOS_PATCH_START_PTR;
-    u8 *end = IOS_PATCH_END_PTR;
+    u8 *ptr = IOS_PATCH_START;
+    u8 *end = IOS_PATCH_END;
     const size_t patch_size = sizeof(isfs_permissions_patch);
     int found = 0;
 
@@ -83,7 +80,7 @@ int nand_ios_enable_access(void)
      * AHBPROT is intentionally required. Without it, Broadway cannot
      * safely modify the running IOS memory region.
      */
-    if (!AHBPROT_DISABLED)
+    if (*HW_AHBPROT != 0xFFFFFFFF)
         return -1;
 
     disable_memory_protection();
