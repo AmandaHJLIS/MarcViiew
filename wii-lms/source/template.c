@@ -426,6 +426,13 @@ typedef struct
     u16 type;
     u64 size;
     u8 hash[20];
+
+    /*
+     * Read-only correlation with the title's own /content directory.
+     * Shared/DLC records are deliberately not probed here.
+     */
+    int title_file_present;
+    u64 title_file_size;
 } NandContentInfo;
 
 static NandEntry nand_entries[NAND_MAX_ENTRIES];
@@ -4426,6 +4433,42 @@ static int nand_load_tmd_contents(const char *title_path)
             &record[16],
             sizeof(nand_tmd_contents[i].hash)
         );
+
+        nand_tmd_contents[i].title_file_present = 0;
+        nand_tmd_contents[i].title_file_size = 0;
+
+        /*
+         * Normal content is expected at title/content/<content ID>.app.
+         * Probe only this already-browsable title-local location. Do not
+         * touch /shared1 or any other NAND directory here.
+         */
+        if (nand_tmd_contents[i].type == 0x0001)
+        {
+            char app_path[ISFS_MAXPATH];
+            s32 app_fd;
+
+            snprintf(
+                app_path,
+                sizeof(app_path),
+                "%s/content/%08x.app",
+                title_path,
+                (unsigned int)nand_tmd_contents[i].content_id
+            );
+
+            app_fd = ISFS_Open(app_path, ISFS_OPEN_READ);
+
+            if (app_fd >= 0)
+            {
+                if (ISFS_GetFileStats(app_fd, &nand_file_stats) == ISFS_OK)
+                {
+                    nand_tmd_contents[i].title_file_present = 1;
+                    nand_tmd_contents[i].title_file_size =
+                        nand_file_stats.file_length;
+                }
+
+                ISFS_Close(app_fd);
+            }
+        }
     }
 
     nand_tmd_content_count = content_count;
@@ -5262,6 +5305,38 @@ static void show_nand_file_info(void)
                 }
 
                 print_centered(line);
+
+                if (content_info->type == 0x0001)
+                {
+                    if (!content_info->title_file_present)
+                    {
+                        print_centered("  title/content: MISSING");
+                    }
+                    else if (content_info->title_file_size == content_info->size)
+                    {
+                        print_centered("  title/content: PRESENT (size matches)");
+                    }
+                    else
+                    {
+                        char storage_line[96];
+
+                        snprintf(
+                            storage_line,
+                            sizeof(storage_line),
+                            "  title/content: PRESENT (actual %u B)",
+                            (unsigned int)content_info->title_file_size
+                        );
+                        print_centered(storage_line);
+                    }
+                }
+                else if (content_info->type == 0x8001)
+                {
+                    print_centered("  storage: SHARED (not probed)");
+                }
+                else if (content_info->type == 0x4001)
+                {
+                    print_centered("  storage: DLC (not probed)");
+                }
             }
 
             printf("\n");
