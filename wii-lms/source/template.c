@@ -608,8 +608,8 @@ static void imported_scan_directory(const char *directory)
         if (incoming)
         {
             char game_id[IMPORTED_RECORD_ID_LENGTH];
-            char incoming_path[256];
-            char imported_path[256];
+            char incoming_path[512];
+            char imported_path[512];
 
             /*
              * Imported records use the marcviiew_GAMEID.mrc naming
