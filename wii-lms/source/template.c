@@ -3932,8 +3932,15 @@ static int nand_load_directory(const char *path)
      */
     if (strncmp(path, "/title/", 7) == 0)
     {
-        nand_identify_title(path);
-        nand_set_title_uid(path);
+        /*
+         * ES_Identify is the normal IOS mechanism for temporarily
+         * adopting a title's NAND permissions. Once the IOS ES
+         * permission checks are patched, this is sufficient for
+         * ISFS access; do not overwrite the identity it establishes
+         * with ES_SetUID().
+         */
+        if (!nand_identify_title(path))
+            return 0;
     }
     else
     {
