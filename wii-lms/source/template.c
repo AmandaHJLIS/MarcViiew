@@ -7462,7 +7462,7 @@ int main(void)
             {
                 if (nand_entries[nand_selection].name[0] != '\0' &&
                     strcmp(nand_entries[nand_selection].name, "title.tmd") == 0 &&
-                    nand_tmd_scroll + 8 < (int)nand_tmd_content_count)
+                    nand_tmd_scroll + 1 < (int)nand_tmd_content_count)
                 {
                     nand_tmd_scroll++;
                     show_nand_file_info();
