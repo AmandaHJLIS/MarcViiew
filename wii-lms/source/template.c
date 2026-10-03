@@ -11,6 +11,7 @@
 #include <wiiuse/wpad.h>
 #include <fat.h>
 #include <ogc/es.h>
+#include <ogc/isfs.h>
 
 #include <viiewlib/marc.h>
 
@@ -4003,6 +4004,7 @@ static int nand_go_parent(void)
 static int nand_enter_selected(void)
 {
     NandEntry *entry;
+    char previous_path[ISFS_MAXPATH];
 
     if (nand_entry_count == 0 ||
         nand_selection < 0 ||
@@ -4015,13 +4017,31 @@ static int nand_enter_selected(void)
         return 0;
 
     snprintf(
+        previous_path,
+        sizeof(previous_path),
+        "%s",
+        nand_current_path
+    );
+
+    snprintf(
         nand_current_path,
         sizeof(nand_current_path),
         "%s",
         entry->path
     );
 
-    return nand_load_directory(nand_current_path);
+    if (nand_load_directory(nand_current_path))
+        return 1;
+
+    snprintf(
+        nand_current_path,
+        sizeof(nand_current_path),
+        "%s",
+        previous_path
+    );
+
+    nand_load_directory(nand_current_path);
+    return 0;
 }
 
 static void show_nand_browser(void)
@@ -6005,10 +6025,8 @@ int main(void)
                     if (nand_entries[nand_selection].type ==
                         NAND_ENTRY_DIRECTORY)
                     {
-                        if (!nand_enter_selected())
-                            show_nand_browser();
-                        else
-                            show_nand_browser();
+                        nand_enter_selected();
+                        show_nand_browser();
                     }
                     else if (nand_entries[nand_selection].type ==
                              NAND_ENTRY_FILE)
