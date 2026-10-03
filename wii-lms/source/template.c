@@ -417,7 +417,21 @@ typedef struct
     u8 type;
 } NandEntry;
 
+#define NAND_MAX_TMD_CONTENTS 512
+
+typedef struct
+{
+    u32 content_id;
+    u16 index;
+    u16 type;
+    u64 size;
+    u8 hash[20];
+} NandContentInfo;
+
 static NandEntry nand_entries[NAND_MAX_ENTRIES];
+static NandContentInfo nand_tmd_contents[NAND_MAX_TMD_CONTENTS];
+static u32 nand_tmd_content_count = 0;
+static int nand_tmd_loaded = 0;
 static u32 nand_entry_count = 0;
 static u32 nand_total_entry_count = 0;
 static int nand_selection = 0;
@@ -3932,6 +3946,8 @@ static int nand_load_directory(const char *path)
      */
     if (strncmp(path, "/title/", 7) == 0)
     {
+        nand_load_tmd_for_path(path);
+
         /*
          * ES_Identify is the normal IOS mechanism for temporarily
          * adopting a title's NAND permissions. Once the IOS ES
@@ -4308,6 +4324,193 @@ static u32 nand_read_be32(const u8 *data)
            ((u32)data[1] << 16) |
            ((u32)data[2] << 8) |
            (u32)data[3];
+}
+
+static int nand_load_tmd_contents(const char *title_path)
+{
+    char tmd_path[ISFS_MAXPATH];
+    u8 header[0x1E4 + 2] ATTRIBUTE_ALIGN(32);
+    u8 *records = NULL;
+    u16 content_count;
+    u32 i;
+    s32 fd;
+    s32 bytes_read;
+    size_t records_size;
+
+    nand_tmd_content_count = 0;
+    nand_tmd_loaded = 0;
+
+    if (title_path == NULL || title_path[0] == '\0')
+        return 0;
+
+    snprintf(
+        tmd_path,
+        sizeof(tmd_path),
+        "%s/content/title.tmd",
+        title_path
+    );
+
+    fd = ISFS_Open(tmd_path, ISFS_OPEN_READ);
+
+    if (fd < 0)
+        return 0;
+
+    bytes_read = ISFS_Read(fd, header, sizeof(header));
+
+    if (bytes_read != (s32)sizeof(header))
+    {
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    content_count = nand_read_be16(&header[0x1DE]);
+
+    if (content_count == 0 || content_count > NAND_MAX_TMD_CONTENTS)
+    {
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    records_size = (size_t)content_count * 0x24;
+
+    records = (u8 *)memalign(32, records_size);
+
+    if (records == NULL)
+    {
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    if (ISFS_Seek(fd, 0x1E4, SEEK_SET) < 0)
+    {
+        free(records);
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    bytes_read = ISFS_Read(fd, records, records_size);
+    ISFS_Close(fd);
+
+    if (bytes_read != (s32)records_size)
+    {
+        free(records);
+        return 0;
+    }
+
+    for (i = 0; i < content_count; ++i)
+    {
+        const u8 *record = &records[i * 0x24];
+
+        nand_tmd_contents[i].content_id =
+            nand_read_be32(&record[0]);
+        nand_tmd_contents[i].index =
+            nand_read_be16(&record[4]);
+        nand_tmd_contents[i].type =
+            nand_read_be16(&record[6]);
+
+        nand_tmd_contents[i].size =
+            ((u64)nand_read_be32(&record[8]) << 32) |
+            (u64)nand_read_be32(&record[12]);
+
+        memcpy(
+            nand_tmd_contents[i].hash,
+            &record[16],
+            sizeof(nand_tmd_contents[i].hash)
+        );
+    }
+
+    nand_tmd_content_count = content_count;
+    nand_tmd_loaded = 1;
+
+    free(records);
+    return 1;
+}
+
+static const NandContentInfo *nand_find_content_info(u32 content_id)
+{
+    u32 i;
+
+    if (!nand_tmd_loaded)
+        return NULL;
+
+    for (i = 0; i < nand_tmd_content_count; ++i)
+    {
+        if (nand_tmd_contents[i].content_id == content_id)
+            return &nand_tmd_contents[i];
+    }
+
+    return NULL;
+}
+
+static int nand_get_current_title_path(
+    const char *path,
+    char *title_path,
+    size_t title_path_size
+)
+{
+    char title_type[16];
+    char title_id[16];
+
+    if (!nand_get_title_context(
+            path,
+            title_type,
+            sizeof(title_type),
+            title_id,
+            sizeof(title_id)))
+        return 0;
+
+    snprintf(
+        title_path,
+        title_path_size,
+        "/title/%s/%s",
+        title_type,
+        title_id
+    );
+
+    return 1;
+}
+
+static int nand_parse_content_id(
+    const char *name,
+    u32 *content_id
+)
+{
+    char *end;
+    unsigned long value;
+
+    if (name == NULL ||
+        content_id == NULL ||
+        strlen(name) != 12 ||
+        name[8] != '.' ||
+        tolower((unsigned char)name[9]) != 'a' ||
+        tolower((unsigned char)name[10]) != 'p' ||
+        tolower((unsigned char)name[11]) != 'p')
+        return 0;
+
+    value = strtoul(name, &end, 16);
+
+    if (end != name + 8)
+        return 0;
+
+    *content_id = (u32)value;
+    return 1;
+}
+
+static int nand_load_tmd_for_path(const char *path)
+{
+    char title_path[ISFS_MAXPATH];
+
+    if (!nand_get_current_title_path(
+            path,
+            title_path,
+            sizeof(title_path)))
+    {
+        nand_tmd_loaded = 0;
+        nand_tmd_content_count = 0;
+        return 0;
+    }
+
+    return nand_load_tmd_contents(title_path);
 }
 
 static int nand_read_title_name(
@@ -4851,11 +5054,32 @@ static void show_nand_browser(void)
                 type = '?';
 
             if (entry->type == NAND_ENTRY_FILE)
+            {
                 nand_format_size(
                     entry->size,
                     size_text,
                     sizeof(size_text)
                 );
+
+                {
+                    u32 content_id;
+                    const NandContentInfo *content_info =
+                        nand_parse_content_id(entry->name, &content_id)
+                            ? nand_find_content_info(content_id)
+                            : NULL;
+
+                    if (content_info != NULL)
+                    {
+                        snprintf(
+                            size_text,
+                            sizeof(size_text),
+                            "idx %u, %u B",
+                            (unsigned int)content_info->index,
+                            (unsigned int)entry->size
+                        );
+                    }
+                }
+            }
             else if (entry->type == NAND_ENTRY_DIRECTORY)
                 snprintf(
                     size_text,
@@ -4972,6 +5196,71 @@ static void show_nand_file_info(void)
 
     snprintf(line, sizeof(line), "Size: %s", size_text);
     print_centered(line);
+
+    {
+        u32 content_id;
+        const NandContentInfo *content_info =
+            nand_parse_content_id(entry->name, &content_id)
+                ? nand_find_content_info(content_id)
+                : NULL;
+
+        if (content_info != NULL)
+        {
+            char hash_text[64];
+
+            snprintf(
+                hash_text,
+                sizeof(hash_text),
+                "%02x%02x%02x%02x...%02x%02x",
+                content_info->hash[0],
+                content_info->hash[1],
+                content_info->hash[2],
+                content_info->hash[3],
+                content_info->hash[18],
+                content_info->hash[19]
+            );
+
+            snprintf(
+                line,
+                sizeof(line),
+                "TMD content ID: %08x",
+                (unsigned int)content_info->content_id
+            );
+            print_centered(line);
+
+            snprintf(
+                line,
+                sizeof(line),
+                "TMD index: %u",
+                (unsigned int)content_info->index
+            );
+            print_centered(line);
+
+            snprintf(
+                line,
+                sizeof(line),
+                "TMD type: %04x",
+                (unsigned int)content_info->type
+            );
+            print_centered(line);
+
+            snprintf(
+                line,
+                sizeof(line),
+                "TMD size: %llu B",
+                (unsigned long long)content_info->size
+            );
+            print_centered(line);
+
+            snprintf(
+                line,
+                sizeof(line),
+                "TMD SHA-1: %s",
+                hash_text
+            );
+            print_centered(line);
+        }
+    }
 
     printf("\n");
     print_centered("Read-only inspection");
