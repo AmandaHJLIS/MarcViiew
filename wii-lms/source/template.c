@@ -431,6 +431,7 @@ typedef struct
 static NandEntry nand_entries[NAND_MAX_ENTRIES];
 static NandContentInfo nand_tmd_contents[NAND_MAX_TMD_CONTENTS];
 static u32 nand_tmd_content_count = 0;
+static u16 nand_tmd_boot_index = 0;
 static int nand_tmd_loaded = 0;
 static u32 nand_entry_count = 0;
 static u32 nand_total_entry_count = 0;
@@ -4338,6 +4339,7 @@ static int nand_load_tmd_contents(const char *title_path)
     size_t records_size;
 
     nand_tmd_content_count = 0;
+    nand_tmd_boot_index = 0;
     nand_tmd_loaded = 0;
 
     if (title_path == NULL || title_path[0] == '\0')
@@ -4364,6 +4366,7 @@ static int nand_load_tmd_contents(const char *title_path)
     }
 
     content_count = nand_read_be16(&header[0x1DE]);
+    nand_tmd_boot_index = nand_read_be16(&header[0x1E0]);
 
     if (content_count == 0 || content_count > NAND_MAX_TMD_CONTENTS)
     {
@@ -5173,8 +5176,21 @@ static void show_nand_file_info(void)
         }
 
         printf("\n");
+
+        {
+            char boot_line[80];
+
+            snprintf(
+                boot_line,
+                sizeof(boot_line),
+                "Boot index: %u",
+                (unsigned int)nand_tmd_boot_index
+            );
+            print_centered(boot_line);
+        }
+
         print_centered("TMD Content Records");
-        print_centered("ID       Index Type   Size (bytes)  SHA-1");
+        print_centered("ID       Index Type    Size (bytes)  Role");
 
         if (nand_tmd_content_count == 0)
         {
@@ -5198,31 +5214,36 @@ static void show_nand_file_info(void)
             {
                 const NandContentInfo *content_info =
                     &nand_tmd_contents[i];
-                char hash_text[32];
+                const char *type_name;
+                const char *role_name;
 
-                snprintf(
-                    hash_text,
-                    sizeof(hash_text),
-                    "%02x%02x%02x%02x...%02x%02x",
-                    content_info->hash[0],
-                    content_info->hash[1],
-                    content_info->hash[2],
-                    content_info->hash[3],
-                    content_info->hash[18],
-                    content_info->hash[19]
-                );
+                if (content_info->type == 0x0001)
+                    type_name = "NORMAL";
+                else if (content_info->type == 0x4001)
+                    type_name = "DLC";
+                else if (content_info->type == 0x8001)
+                    type_name = "SHARED";
+                else
+                    type_name = "OTHER";
+
+                if (content_info->index == nand_tmd_boot_index)
+                    role_name = "BOOT";
+                else if (content_info->index == 0)
+                    role_name = "INDEX0";
+                else
+                    role_name = "";
 
                 if ((content_info->size >> 32) == 0)
                 {
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x   %-5u %-6x %-12u %s",
+                        "%08x   %-5u %-7s %-12u %s",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
-                        (unsigned int)content_info->type,
+                        type_name,
                         (unsigned int)content_info->size,
-                        hash_text
+                        role_name
                     );
                 }
                 else
@@ -5230,13 +5251,13 @@ static void show_nand_file_info(void)
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x   %-5u %-6x %08x:%08x %s",
+                        "%08x   %-5u %-7s %08x:%08x %s",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
-                        (unsigned int)content_info->type,
+                        type_name,
                         (unsigned int)(content_info->size >> 32),
                         (unsigned int)(content_info->size & 0xFFFFFFFF),
-                        hash_text
+                        role_name
                     );
                 }
 
@@ -5255,6 +5276,11 @@ static void show_nand_file_info(void)
             );
             print_centered(line);
         }
+
+        printf("\n");
+        print_centered("BOOT = TMD boot-index content");
+        print_centered("INDEX0 = content index 0");
+        print_centered("SHARED = stored outside title/content");
 
         printf("\n");
         print_centered("UP / DOWN = Scroll records");
