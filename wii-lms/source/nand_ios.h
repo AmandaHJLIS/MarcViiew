@@ -16,3 +16,5 @@
 int nand_ios_enable_access(void);
 
 #endif
+
+void nand_ios_get_patch_status(char *buffer, size_t size);
