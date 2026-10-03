@@ -90,3 +90,25 @@ static int apply_es_identify_patch(void)
     );
 }
 
+
+int nand_ios_enable_access(void)
+{
+    int found;
+
+    if (nand_ios_access_enabled)
+        return 1;
+
+    if (*HW_AHBPROT != 0xFFFFFFFF)
+        return -1;
+
+    disable_memory_protection();
+
+    found = apply_isfs_permission_patch();
+    found += apply_es_identify_patch();
+
+    if (found <= 0)
+        return 0;
+
+    nand_ios_access_enabled = 1;
+    return found;
+}
