@@ -754,12 +754,7 @@ void extract_game_id(
         strlen(start) >= 8
     ) {
 
-        strncpy(
-            id,
-            start + 1,
-            6
-        );
-
+        memcpy(id, start + 1, 6);
         id[6] = '\0';
 
     } else {
@@ -1223,12 +1218,8 @@ void scan_storage(
             games[game_count].title
         );
 
-        strncpy(
-            games[game_count].id,
-            discovered_id,
-            sizeof(games[game_count].id) - 1
-        );
-        games[game_count].id[sizeof(games[game_count].id) - 1] = '\0';
+        memcpy(games[game_count].id, discovered_id, 6);
+        games[game_count].id[6] = '\0';
 
         setup_game_metadata(&games[game_count]);
         add_game_source(&games[game_count], source);
@@ -1254,8 +1245,8 @@ static void scan_digital_titles(const char *root_path, const char *source)
 
     while ((entry = readdir(dir)) != NULL)
     {
-        char title_directory[256];
-        char content_path[256];
+        char title_directory[512];
+        char content_path[512];
         char code[7];
         size_t length;
         FILE *content;
@@ -1323,11 +1314,8 @@ static void scan_digital_titles(const char *root_path, const char *source)
 
         memset(&games[game_count], 0, sizeof(Game));
 
-        strncpy(
-            games[game_count].id,
-            code,
-            sizeof(games[game_count].id) - 1
-        );
+        memcpy(games[game_count].id, code, 6);
+        games[game_count].id[6] = '\0';
 
         strncpy(
             games[game_count].title,
@@ -1450,11 +1438,8 @@ static void scan_nand_catalogue(void)
             sizeof(Game)
         );
 
-        strncpy(
-            games[game_count].id,
-            code,
-            sizeof(games[game_count].id) - 1
-        );
+        memcpy(games[game_count].id, code, 6);
+        games[game_count].id[6] = '\0';
 
         strncpy(
             games[game_count].title,
@@ -1676,17 +1661,12 @@ void add_info_line(
     )
         return;
 
-    strncpy(
+    snprintf(
         info_lines[*line_count],
-        text,
-        INFO_LINE_LENGTH - 1
+        INFO_LINE_LENGTH,
+        "%s",
+        text
     );
-
-    info_lines[
-        *line_count
-    ][
-        INFO_LINE_LENGTH - 1
-    ] = '\0';
 
     (*line_count)++;
 }
@@ -2024,19 +2004,12 @@ void add_marc_line(
     )
         return;
 
-    strncpy(
-        marc_lines[
-            marc_line_count
-        ],
-        text,
-        MARC_LINE_LENGTH - 1
+    snprintf(
+        marc_lines[marc_line_count],
+        MARC_LINE_LENGTH,
+        "%s",
+        text
     );
-
-    marc_lines[
-        marc_line_count
-    ][
-        MARC_LINE_LENGTH - 1
-    ] = '\0';
 
     marc_line_count++;
 }
@@ -2330,15 +2303,12 @@ static void imported_update_metadata_from_record(
 
         if (value != NULL && value[0] != '\0')
         {
-            strncpy(
+            snprintf(
                 imported->marc_001,
-                value,
-                sizeof(imported->marc_001) - 1
+                sizeof(imported->marc_001),
+                "%s",
+                value
             );
-
-            imported->marc_001[
-                sizeof(imported->marc_001) - 1
-            ] = '\0';
         }
     }
 }
@@ -2685,15 +2655,12 @@ void perform_marc_search() {
             }
 
 
-            strncpy(
+            snprintf(
                 current_game_id,
-                line + 8,
-                sizeof(current_game_id) - 1
+                sizeof(current_game_id),
+                "%s",
+                line + 8
             );
-
-            current_game_id[
-                sizeof(current_game_id) - 1
-            ] = '\0';
 
 
             in_record = 1;
