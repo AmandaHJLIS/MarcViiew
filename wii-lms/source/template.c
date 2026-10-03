@@ -3859,14 +3859,85 @@ static int nand_load_directory(const char *path)
     char *name_buffer;
     s32 result;
     u32 i;
+    int changed_uid = 0;
+    u64 original_uid = 0;
 
     if (path == NULL || path[0] == '\0')
         return 0;
 
+    /*
+     * NAND title data is protected by the IOS filesystem UID. When the
+     * browser enters another title, ISFS_ReadDir() can therefore fail
+     * even though the directory exists. ES_SetUID() is the IOS-supported
+     * mechanism used by Wii software to temporarily adopt a title's
+     * filesystem permissions.
+     *
+     * Keep this read-only: we only change the active UID, enumerate the
+     * directory, then restore the UID belonging to MarcViiew.
+     */
+    {
+        char title_type[16];
+        char title_id[16];
+
+        if (nand_get_title_context(
+                path,
+                title_type,
+                sizeof(title_type),
+                title_id,
+                sizeof(title_id)))
+        {
+            const char *slash;
+            unsigned long high;
+            unsigned long low;
+            u64 title_uid;
+
+            slash = strchr(title_id, '/');
+
+            /*
+             * nand_get_title_context() returns only the low title ID, so
+             * recover the high part directly from the path.
+             */
+            if (strncmp(path, "/title/", 7) == 0)
+            {
+                char high_text[9];
+                size_t high_length = strlen(title_type);
+
+                if (high_length == 8 &&
+                    strchr(title_type, '/') == NULL)
+                {
+                    memcpy(high_text, title_type, 8);
+                    high_text[8] = '\0';
+
+                    high = strtoul(high_text, NULL, 16);
+                    low = strtoul(title_id, NULL, 16);
+
+                    title_uid = ((u64)high << 32) | (u64)low;
+
+                    if (__ES_Init() >= 0 &&
+                        ES_GetTitleID(&original_uid) >= 0 &&
+                        ES_SetUID(title_uid) >= 0)
+                    {
+                        changed_uid = 1;
+                    }
+                }
+            }
+
+            (void)slash;
+        }
+    }
+
     result = ISFS_ReadDir(path, NULL, &entry_count);
 
     if (result != ISFS_OK)
+    {
+        if (changed_uid)
+        {
+            ES_SetUID(original_uid);
+            __ES_Close();
+        }
+
         return 0;
+    }
 
     nand_total_entry_count = entry_count;
     nand_entry_count = 0;
@@ -3874,7 +3945,15 @@ static int nand_load_directory(const char *path)
     nand_scroll = 0;
 
     if (entry_count == 0)
+    {
+        if (changed_uid)
+        {
+            ES_SetUID(original_uid);
+            __ES_Close();
+        }
+
         return 1;
+    }
 
     read_count = entry_count;
 
@@ -3894,7 +3973,15 @@ static int nand_load_directory(const char *path)
         );
 
     if (name_buffer == NULL)
+    {
+        if (changed_uid)
+        {
+            ES_SetUID(original_uid);
+            __ES_Close();
+        }
+
         return 0;
+    }
 
     result =
         ISFS_ReadDir(
@@ -3906,6 +3993,13 @@ static int nand_load_directory(const char *path)
     if (result != ISFS_OK)
     {
         free(name_buffer);
+
+        if (changed_uid)
+        {
+            ES_SetUID(original_uid);
+            __ES_Close();
+        }
+
         return 0;
     }
 
@@ -4009,6 +4103,13 @@ static int nand_load_directory(const char *path)
     }
 
     free(name_buffer);
+
+    if (changed_uid)
+    {
+        ES_SetUID(original_uid);
+        __ES_Close();
+    }
+
     return 1;
 }
 
