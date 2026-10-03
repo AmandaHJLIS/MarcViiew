@@ -429,24 +429,37 @@ static int imported_get_id(const char *filename, char *id)
     id_length = (size_t)(dot - (filename + 10));
 
     /*
-     * Accept both the documented marcviiew_GAMEID.mrc form and
-     * the bracketed marcviiew_[GAMEID].mrc form used by existing
-     * import files.
+     * Accept both unbracketed and bracketed filenames. Wii software
+     * identifiers are not all the same length: disc-style records
+     * may use six-character IDs, while channel/WiiWare records can
+     * use four-character IDs such as HCMP.
+     *
+     * Examples:
+     *   marcviiew_HCMP.mrc
+     *   marcviiew_[HCMP].mrc
+     *   marcviiew_RMCP01.mrc
+     *   marcviiew_[RMCP01].mrc
      */
-    if (id_length == 6)
+    if (id_length >= 4 && id_length <= 6)
     {
-        memcpy(id, filename + 10, 6);
-        id[6] = '\0';
+        memcpy(id, filename + 10, id_length);
+        id[id_length] = '\0';
         return 1;
     }
 
-    if (id_length == 8 &&
+    if (id_length >= 6 && id_length <= 8 &&
         filename[10] == '[' &&
-        filename[17] == ']')
+        filename[id_length + 9] == ']')
     {
-        memcpy(id, filename + 11, 6);
-        id[6] = '\0';
-        return 1;
+        size_t bracketed_id_length = id_length - 2;
+
+        if (bracketed_id_length >= 4 &&
+            bracketed_id_length <= 6)
+        {
+            memcpy(id, filename + 11, bracketed_id_length);
+            id[bracketed_id_length] = '\0';
+            return 1;
+        }
     }
 
     return 0;
