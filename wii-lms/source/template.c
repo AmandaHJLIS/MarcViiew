@@ -3861,6 +3861,8 @@ static int nand_get_title_context(
     size_t title_id_size
 );
 
+static int nand_identify_title(const char *path);
+
 static int nand_load_directory(const char *path)
 {
     u32 entry_count = 0;
@@ -3871,6 +3873,14 @@ static int nand_load_directory(const char *path)
 
     if (path == NULL || path[0] == '\0')
         return 0;
+
+    /*
+     * ISFS permissions are tied to the current IOS title identity. For a
+     * title directory, establish that identity before probing content/data.
+     * ES_Identify changes permissions without launching the title.
+     */
+    if (strncmp(path, "/title/", 7) == 0)
+        nand_identify_title(path);
 
     result = ISFS_ReadDir(path, NULL, &entry_count);
 
@@ -4052,6 +4062,138 @@ static int nand_get_title_context(
 
     memcpy(title_id, id_start, id_length);
     title_id[id_length] = '\0';
+
+    return 1;
+}
+
+static int nand_identify_title(const char *path)
+{
+    char title_type[16];
+    char title_id[16];
+    char cert_path[] = "/sys/cert.sys";
+    u64 titleid;
+    u32 tmd_size = 0;
+    u32 cert_size = 0;
+    u32 tik_size = STD_SIGNED_TIK_SIZE;
+    signed_blob *tmd_buffer = NULL;
+    signed_blob *cert_buffer = NULL;
+    signed_blob *tik_buffer = NULL;
+    s32 fd;
+    s32 result;
+
+    if (!nand_get_title_context(
+            path,
+            title_type,
+            sizeof(title_type),
+            title_id,
+            sizeof(title_id)))
+        return 0;
+
+    if (strlen(title_type) != 8 || strlen(title_id) != 8)
+        return 0;
+
+    titleid = ((u64)strtoul(title_type, NULL, 16) << 32) |
+              (u64)strtoul(title_id, NULL, 16);
+
+    if (ES_GetStoredTMDSize(titleid, &tmd_size) < 0 ||
+        tmd_size == 0 ||
+        tmd_size > MAX_SIGNED_TMD_SIZE)
+        return 0;
+
+    tmd_buffer = (signed_blob *)memalign(32, tmd_size);
+    if (tmd_buffer == NULL)
+        return 0;
+
+    if (ES_GetStoredTMD(titleid, tmd_buffer, tmd_size) < 0)
+    {
+        free(tmd_buffer);
+        return 0;
+    }
+
+    fd = ISFS_Open(cert_path, ISFS_OPEN_READ);
+    if (fd < 0)
+    {
+        free(tmd_buffer);
+        return 0;
+    }
+
+    if (ISFS_GetFileStats(fd, &nand_file_stats) != ISFS_OK ||
+        nand_file_stats.file_length == 0 ||
+        nand_file_stats.file_length > 0x10000)
+    {
+        ISFS_Close(fd);
+        free(tmd_buffer);
+        return 0;
+    }
+
+    cert_size = nand_file_stats.file_length;
+    cert_buffer = (signed_blob *)memalign(32, cert_size);
+    if (cert_buffer == NULL)
+    {
+        ISFS_Close(fd);
+        free(tmd_buffer);
+        return 0;
+    }
+
+    result = ISFS_Read(fd, cert_buffer, cert_size);
+    ISFS_Close(fd);
+
+    if (result != (s32)cert_size)
+    {
+        free(cert_buffer);
+        free(tmd_buffer);
+        return 0;
+    }
+
+    tik_buffer = (signed_blob *)memalign(32, tik_size);
+    if (tik_buffer == NULL)
+    {
+        free(cert_buffer);
+        free(tmd_buffer);
+        return 0;
+    }
+
+    memset(tik_buffer, 0, tik_size);
+
+    {
+        sig_rsa2048 *signature = (sig_rsa2048 *)tik_buffer;
+        tik *ticket = (tik *)SIGNATURE_PAYLOAD(tik_buffer);
+
+        signature->type = ES_SIG_RSA2048;
+        strcpy(ticket->issuer, "Root-CA00000001-XS00000003");
+        memset(ticket->cidx_mask, 0xFF, 32);
+    }
+
+    result = ES_Identify(
+        cert_buffer,
+        cert_size,
+        tmd_buffer,
+        tmd_size,
+        tik_buffer,
+        tik_size,
+        NULL
+    );
+
+    free(tik_buffer);
+    free(cert_buffer);
+    free(tmd_buffer);
+
+    if (result < 0)
+    {
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "ES_Identify failed (%d).",
+            (int)result
+        );
+        return 0;
+    }
+
+    snprintf(
+        nand_status,
+        sizeof(nand_status),
+        "ES_Identify title permissions active."
+    );
 
     return 1;
 }
