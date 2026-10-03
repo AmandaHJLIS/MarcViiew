@@ -4096,6 +4096,87 @@ static const char *nand_title_type_name(const char *title_type)
     return "Unknown title type";
 }
 
+static int nand_read_title_name(
+    const char *title_path,
+    char *title_name,
+    size_t title_name_size
+)
+{
+    char path[ISFS_MAXPATH];
+    int fd;
+    char buffer[4096] ATTRIBUTE_ALIGN(32);
+    s32 bytes_read;
+    const char *tags[] = {
+        "<longname_en>",
+        "<longname_jp>",
+        "<longname_fr>",
+        "<longname_de>",
+        "<longname_es>",
+        "<longname_it>"
+    };
+    size_t i;
+
+    if (title_path == NULL ||
+        title_name == NULL ||
+        title_name_size == 0)
+        return 0;
+
+    snprintf(path, sizeof(path), "%s/meta.xml", title_path);
+
+    fd = ISFS_Open(path, ISFS_OPEN_READ);
+    if (fd < 0)
+        return 0;
+
+    bytes_read = ISFS_Read(fd, buffer, sizeof(buffer) - 1);
+    ISFS_Close(fd);
+
+    if (bytes_read <= 0)
+        return 0;
+
+    buffer[bytes_read] = '\0';
+
+    for (i = 0; i < sizeof(tags) / sizeof(tags[0]); ++i)
+    {
+        char end_tag[32];
+        char *start;
+        char *end;
+        size_t length;
+
+        start = strstr((char *)buffer, tags[i]);
+        if (start == NULL)
+            continue;
+
+        start = strchr(start, '>');
+        if (start == NULL)
+            continue;
+
+        start++;
+
+        snprintf(
+            end_tag,
+            sizeof(end_tag),
+            "</%s",
+            tags[i] + 1
+        );
+
+        end = strstr(start, end_tag);
+        if (end == NULL || end <= start)
+            continue;
+
+        length = (size_t)(end - start);
+        if (length >= title_name_size)
+            length = title_name_size - 1;
+
+        memcpy(title_name, start, length);
+        title_name[length] = '\0';
+
+        if (title_name[0] != '\0')
+            return 1;
+    }
+
+    return 0;
+}
+
 static int nand_decode_title_id(
     const char *title_id,
     char *decoded,
@@ -4277,6 +4358,7 @@ static void show_nand_browser(void)
                 sizeof(title_id)))
         {
             char title_code[8];
+            char title_name[128];
 
             snprintf(
                 line,
@@ -4310,6 +4392,20 @@ static void show_nand_browser(void)
                 );
             }
             print_centered(line);
+
+            if (nand_read_title_name(
+                    nand_current_path,
+                    title_name,
+                    sizeof(title_name)))
+            {
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title name: %s",
+                    title_name
+                );
+                print_centered(line);
+            }
         }
     }
 
