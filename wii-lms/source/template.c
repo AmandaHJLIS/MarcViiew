@@ -4249,9 +4249,16 @@ static int nand_read_title_name(
 
     name_table = &imet[0x1C];
 
-    for (i = 0; i < 10; ++i)
     {
-        name_utf16 = name_table + ((size_t)i * 84);
+        const u32 language_order[10] = {
+            1, 0, 2, 3, 4, 5, 6, 7, 8, 9
+        };
+
+        for (i = 0; i < 10; ++i)
+        {
+            u32 language = language_order[i];
+
+            name_utf16 = name_table + ((size_t)language * 84);
 
         if (name_utf16[0] == 0 && name_utf16[1] == 0)
             continue;
@@ -4307,6 +4314,7 @@ static int nand_read_title_name(
             if (out != 0)
                 return 1;
         }
+    }
     }
 
     return 0;
