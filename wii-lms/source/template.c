@@ -421,6 +421,7 @@ static int nand_selection = 0;
 static int nand_scroll = 0;
 static int nand_initialized = 0;
 static char nand_current_path[ISFS_MAXPATH] = "/";
+static char nand_status[160] = "";
 
 static fstats nand_file_stats ATTRIBUTE_ALIGN(32);
 
@@ -487,9 +488,6 @@ static int imported_get_id(const char *filename, char *id)
             return 1;
         }
     }
-
-    if (nand_initialized)
-        ISFS_Deinitialize();
 
     return 0;
 }
@@ -4038,6 +4036,17 @@ static void show_nand_browser(void)
     print_ui_line('=');
     printf("\n");
 
+    if (!nand_initialized)
+    {
+        print_centered("NAND filesystem unavailable.");
+        if (nand_status[0] != '\0')
+            print_centered(nand_status);
+
+        printf("\n");
+        print_centered("B = Back    PLUS = Main Menu");
+        return;
+    }
+
     snprintf(
         line,
         sizeof(line),
@@ -6888,6 +6897,9 @@ int main(void)
         VIDEO_WaitVSync();
     }
 
+
+    if (nand_initialized)
+        ISFS_Deinitialize();
 
     return 0;
 }
