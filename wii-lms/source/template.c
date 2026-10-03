@@ -5248,7 +5248,14 @@ static void show_nand_file_info(void)
                 nand_tmd_scroll = (int)nand_tmd_content_count - 1;
 
             first = (u32)nand_tmd_scroll;
-            last = first + 8;
+
+            /*
+             * Each record now occupies several TV lines because its SHA-1
+             * is displayed underneath it. Keep the page small enough that
+             * the footer remains visible, while UP/DOWN continues to scroll
+             * one record at a time.
+             */
+            last = first + 3;
 
             if (last > nand_tmd_content_count)
                 last = nand_tmd_content_count;
