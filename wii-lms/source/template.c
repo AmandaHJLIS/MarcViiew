@@ -5306,6 +5306,50 @@ static void show_nand_file_info(void)
 
                 print_centered(line);
 
+                /*
+                 * The SHA-1 is the important identity for content that is
+                 * not represented by a title-local filename. Display it
+                 * without probing any additional NAND directories.
+                 */
+                {
+                    char hash_line[64];
+                    char hash_line_2[64];
+                    u32 h;
+
+                    snprintf(hash_line, sizeof(hash_line), "SHA-1: ");
+                    for (h = 0; h < 10; ++h)
+                    {
+                        char byte_text[4];
+
+                        snprintf(
+                            byte_text,
+                            sizeof(byte_text),
+                            "%02x",
+                            (unsigned int)content_info->hash[h]
+                        );
+                        strncat(hash_line, byte_text,
+                                sizeof(hash_line) - strlen(hash_line) - 1);
+                    }
+
+                    snprintf(hash_line_2, sizeof(hash_line_2), "       ");
+                    for (h = 10; h < 20; ++h)
+                    {
+                        char byte_text[4];
+
+                        snprintf(
+                            byte_text,
+                            sizeof(byte_text),
+                            "%02x",
+                            (unsigned int)content_info->hash[h]
+                        );
+                        strncat(hash_line_2, byte_text,
+                                sizeof(hash_line_2) - strlen(hash_line_2) - 1);
+                    }
+
+                    print_centered(hash_line);
+                    print_centered(hash_line_2);
+                }
+
                 if (content_info->type == 0x0001)
                 {
                     if (!content_info->title_file_present)
