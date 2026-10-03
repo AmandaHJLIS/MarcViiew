@@ -1,7 +1,5 @@
 # MarcViiew
 
-**Current release: 0.7.0-beta**
-
 <img width="370" height="67" alt="MarcViiew logo" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
 
 MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
@@ -10,40 +8,7 @@ MarcViiew combines Wii software discovery with library and information science p
 
 The project is designed as an experimental library and information science project for libraries, librarians, library technicians, and LIS students. It explores how established cataloguing standards, controlled vocabularies, metadata practices, and digital-library workflows can be adapted to a Wii homebrew environment.
 
-> **Branch note:** This README describes the **`imported-records-template` experimental branch**. It is ahead of `main` and is used for developing, testing, and validating catalogue, storage-discovery, imported-record, and Wii-specific functionality before changes are considered for the stable branch.
-
-## Experimental Branch
-
-The `imported-records-template` branch is a development and hardware-testing branch.
-
-Its purpose is to provide a safe place to work on larger MarcViiew changes without changing the stable `main` branch. This includes experimental changes to the Wii application source, catalogue discovery, imported MARC records, metadata handling, and user-interface behaviour.
-
-Current branch work includes:
-
-* Imported MARC record management
-* Automatic handling of successfully imported `.mrc` files
-* NAND title discovery
-* SD and USB digital-title discovery where a reliable Wii title ID is available
-* Integration of discovered NAND/SD/USB titles into the catalogue
-* Source and distribution metadata
-* Duplicate-title source merging
-* MARC 21 viewing and ISO 2709 export for discovered catalogue records
-* Catalogue and record scrolling improvements
-* Settings-based NAND and database reload functionality
-
-Changes on this branch should be treated as **experimental until they have been built and tested on real Wii hardware**.
-
-### Branch workflow
-
-The branch is intentionally kept separate from `main` while development is underway.
-
-* `main` represents the stable project baseline.
-* `imported-records-template` is the experimental development branch.
-* Wii application `.c` source changes are developed on this experimental branch first.
-* Hardware testing is performed before experimental functionality is considered ready to merge.
-* Finished changes can later be reviewed and selectively merged into `main`.
-
-This branch is not intended to be a permanent fork of the project; it is a working area for developing the next stable iteration of MarcViiew.
+> **Branch note:** This README describes the **`main` branch**. The former `imported-records-template` experimental branch has been merged into `main` following hardware testing. Future Wii application source changes can continue to be developed experimentally before being merged.
 
 ## MARC 21
 
@@ -124,7 +89,7 @@ The database is used for **metadata matching**, not as a requirement for every d
 
 ## Catalogue Discovery
 
-The experimental branch can discover software through several Wii storage mechanisms.
+The current branch can discover software through several Wii storage mechanisms.
 
 ### WBFS storage
 
@@ -193,7 +158,7 @@ These are deliberately separate concepts. A digital title installed on NAND can 
 
 ## Imported MARC Records
 
-The experimental branch includes an imported-record workflow for external `.mrc` files.
+The current branch includes an imported-record workflow for external `.mrc` files.
 
 Incoming records are treated separately from the persistent imported-record collection:
 
@@ -272,18 +237,18 @@ These conventions may change as MarcViiew's cataloguing model develops.
 
 ## Current Development Focus
 
-The major catalogue-discovery, imported-record, MARC 21, and ViiewLib integration work for the 0.7.0-beta milestone has been implemented and tested on real Wii hardware.
+The major catalogue-discovery and beta feature work is substantially implemented and has been tested on real Wii hardware.
 
-The next development stage is focused on refinement rather than another large discovery subsystem. Current areas include:
+Current development areas include:
 
-* Further MARC 21 validation and interoperability work
-* Additional metadata research and cataloguing-profile refinement
-* Catalogue and Wii user-interface refinement
-* Performance and memory optimisation
-* Additional Wii hardware regression testing
-* Longer-term Wii/WiiWare preservation and file-structure research
-
-New Wii application source changes are developed experimentally and hardware-tested before they are considered for `main`.
+* Additional MARC 21 validation and interoperability work
+* Further ISO 2709 compatibility testing
+* Further imported-record workflow refinement
+* Final catalogue and Wii user-interface refinement
+* Additional metadata research where it provides clear catalogue value
+* Wii performance and memory optimisation
+* Hardware regression testing
+* Future experimental functionality before stable integration.
 
 ## Long-Term Planned Features
 
@@ -304,15 +269,17 @@ The following ideas are planned as longer-term research and development areas ra
 * Research into WiiWare game file formats and modification workflows, with an initial focus on documenting and experimenting with individual titles
 * Application of library and information science principles to the preservation, organisation, metadata, and documentation of Wii and WiiWare reverse-engineering research
 
-These projects are intended to complement MarcViiew's existing catalogue and LIS focus. They are exploratory long-term goals and are not part of the current stable-release requirements.
+These projects are intended to complement MarcViiew's existing catalogue and LIS focus. They are exploratory long-term goals and are not part of the current beta-release requirements.
 
 ## Beta Status
 
-MarcViiew is currently in **beta development**, with **0.7.0-beta** representing the current release milestone.
+MarcViiew is currently in **beta development**.
 
-The current release contains functional MARC 21 and ISO 2709 support through ViiewLib, imported MARC record handling, Wii software discovery across multiple storage sources, and hardware-tested integration with the refined ViiewLib API.
+The current state corresponds to the **0.7.0-beta development milestone**, following the feature-focused 0.5.0-beta and subsequent development work.
 
-However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
+The `main` branch contains the hardware-tested 0.7.0-beta milestone.
+
+MarcViiew contains functional MARC 21 and ISO 2709 support through ViiewLib, including `.mrc` encoding and Wii hardware testing. However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
 
 ## Setup
 
@@ -337,7 +304,7 @@ The 0.7.0-beta release uses the standard Wii application setup.
 
 5. Open the Homebrew Channel and launch MarcViiew.
 
-For source builds, hardware testing is recommended after compilation. The 0.7.0-beta milestone has already been validated on real Wii hardware.
+The 0.7.0-beta milestone has been built and tested on real Wii hardware; hardware testing is recommended after future source builds.
 
 ## Development Notes
 
@@ -355,7 +322,7 @@ The project intentionally separates:
 
 This separation allows individual parts of the catalogue workflow to be developed and tested without making the Wii application responsible for assumptions that belong in the metadata or MARC generation pipeline.
 
-Experimental development branches may be used to test future changes before they are integrated into the stable branch.
+Experimental development branches may be used to test future changes before they are integrated into `main`.
 
 ## License
 
