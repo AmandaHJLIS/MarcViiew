@@ -1,4 +1,5 @@
 #include <gccore.h>
+#include <ogc/system.h>
 #include <ogc/machine/processor.h>
 #include <string.h>
 #include <stdio.h>
@@ -175,7 +176,10 @@ void nand_ios_get_patch_status(char *buffer, size_t size)
         return;
 
     snprintf(buffer, size,
-             "ISFS:%d UID:%d ID:%d HASH:%d NEW:%d",
+             "IOS:%u REV:%u AHB:%d ISFS:%d UID:%d ID:%d HASH:%d NEW:%d",
+             (unsigned int)IOS_GetVersion(),
+             (unsigned int)IOS_GetRevision(),
+             (*HW_AHBPROT == 0xFFFFFFFF) ? 1 : 0,
              nand_patch_isfs, nand_patch_setuid, nand_patch_identify,
              nand_patch_hash, nand_patch_new_hash);
 }
