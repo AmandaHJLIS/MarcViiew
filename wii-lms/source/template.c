@@ -4372,7 +4372,13 @@ static int nand_load_tmd_contents(const char *title_path)
 
     records_size = (size_t)content_count * 0x24;
 
-    records = (u8 *)memalign(32, records_size);
+    /*
+     * ISFS_Read() requires a 32-byte aligned destination. Read the
+     * content records directly from the start of the TMD instead of
+     * seeking the ISFS file descriptor. This avoids relying on IOS seek
+     * state while the NAND browser is inspecting a protected title.
+     */
+    records = (u8 *)memalign(32, 0x1E4 + records_size);
 
     if (records == NULL)
     {
@@ -4380,17 +4386,17 @@ static int nand_load_tmd_contents(const char *title_path)
         return 0;
     }
 
-    if (ISFS_Seek(fd, 0x1E4, SEEK_SET) < 0)
+    if (ISFS_Seek(fd, 0, SEEK_SET) < 0)
     {
         free(records);
         ISFS_Close(fd);
         return 0;
     }
 
-    bytes_read = ISFS_Read(fd, records, records_size);
+    bytes_read = ISFS_Read(fd, records, 0x1E4 + records_size);
     ISFS_Close(fd);
 
-    if (bytes_read != (s32)records_size)
+    if (bytes_read != (s32)(0x1E4 + records_size))
     {
         free(records);
         return 0;
@@ -4398,7 +4404,7 @@ static int nand_load_tmd_contents(const char *title_path)
 
     for (i = 0; i < content_count; ++i)
     {
-        const u8 *record = &records[i * 0x24];
+        const u8 *record = &records[0x1E4 + (i * 0x24)];
 
         nand_tmd_contents[i].content_id =
             nand_read_be32(&record[0]);
@@ -5252,11 +5258,17 @@ static void show_nand_file_info(void)
             );
             print_centered(line);
 
+            /*
+             * Keep the 64-bit TMD size out of the console printf path.
+             * The raw file size is already displayed above, while the
+             * TMD size is retained internally for later comparison.
+             */
             snprintf(
                 line,
                 sizeof(line),
-                "TMD size: %llu B",
-                (unsigned long long)content_info->size
+                "TMD record size: %u:%u",
+                (unsigned int)(content_info->size >> 32),
+                (unsigned int)(content_info->size & 0xFFFFFFFF)
             );
             print_centered(line);
 
