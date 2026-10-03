@@ -436,6 +436,7 @@ static u32 nand_entry_count = 0;
 static u32 nand_total_entry_count = 0;
 static int nand_selection = 0;
 static int nand_scroll = 0;
+static int nand_tmd_scroll = 0;
 static int nand_initialized = 0;
 static char nand_current_path[ISFS_MAXPATH] = "/";
 static char nand_status[160] = "";
@@ -5139,6 +5140,128 @@ static void show_nand_file_info(void)
 
     printf("\x1b[2J\x1b[H");
     print_ui_line('=');
+
+    if (strcmp(entry->name, "title.tmd") == 0)
+    {
+        u32 first;
+        u32 last;
+        u32 i;
+
+        print_centered("NAND TMD Information");
+        print_ui_line('=');
+        printf("\n");
+
+        snprintf(line, sizeof(line), "Name: %s", entry->name);
+        print_centered(line);
+
+        snprintf(line, sizeof(line), "Path: %s", entry->path);
+        print_centered(line);
+
+        nand_format_size(entry->size, size_text, sizeof(size_text));
+        snprintf(line, sizeof(line), "File size: %s", size_text);
+        print_centered(line);
+
+        if (!nand_load_tmd_for_path(entry->path))
+        {
+            printf("\n");
+            print_centered("Could not parse TMD content records.");
+            printf("\n");
+            print_centered("Read-only inspection");
+            printf("\n");
+            print_centered("B = Back    PLUS = Main Menu");
+            return;
+        }
+
+        printf("\n");
+        print_centered("TMD Content Records");
+        print_centered("ID       Index Type   Size (bytes)  SHA-1");
+
+        if (nand_tmd_content_count == 0)
+        {
+            print_centered("No content records found.");
+        }
+        else
+        {
+            if (nand_tmd_scroll < 0)
+                nand_tmd_scroll = 0;
+
+            if ((u32)nand_tmd_scroll >= nand_tmd_content_count)
+                nand_tmd_scroll = (int)nand_tmd_content_count - 1;
+
+            first = (u32)nand_tmd_scroll;
+            last = first + 8;
+
+            if (last > nand_tmd_content_count)
+                last = nand_tmd_content_count;
+
+            for (i = first; i < last; ++i)
+            {
+                const NandContentInfo *content_info =
+                    &nand_tmd_contents[i];
+                char hash_text[32];
+
+                snprintf(
+                    hash_text,
+                    sizeof(hash_text),
+                    "%02x%02x%02x%02x...%02x%02x",
+                    content_info->hash[0],
+                    content_info->hash[1],
+                    content_info->hash[2],
+                    content_info->hash[3],
+                    content_info->hash[18],
+                    content_info->hash[19]
+                );
+
+                if ((content_info->size >> 32) == 0)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "%08x   %-5u %-6x %-12u %s",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)content_info->size,
+                        hash_text
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "%08x   %-5u %-6x %08x:%08x %s",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)(content_info->size >> 32),
+                        (unsigned int)(content_info->size & 0xFFFFFFFF),
+                        hash_text
+                    );
+                }
+
+                print_centered(line);
+            }
+
+            printf("\n");
+
+            snprintf(
+                line,
+                sizeof(line),
+                "Records %u-%u of %u",
+                first + 1,
+                last,
+                (unsigned int)nand_tmd_content_count
+            );
+            print_centered(line);
+        }
+
+        printf("\n");
+        print_centered("UP / DOWN = Scroll records");
+        print_centered("B = Back    PLUS = Main Menu");
+        return;
+    }
+
     print_centered("NAND File Information");
     print_ui_line('=');
     printf("\n");
@@ -7110,6 +7233,7 @@ int main(void)
                     else if (nand_entries[nand_selection].type ==
                              NAND_ENTRY_FILE)
                     {
+                        nand_tmd_scroll = 0;
                         screen = 16;
                         show_nand_file_info();
                     }
@@ -7144,6 +7268,28 @@ int main(void)
         */
         if (screen == 16)
         {
+            if (input & INPUT_UP)
+            {
+                if (nand_entries[nand_selection].name[0] != '\0' &&
+                    strcmp(nand_entries[nand_selection].name, "title.tmd") == 0 &&
+                    nand_tmd_scroll > 0)
+                {
+                    nand_tmd_scroll--;
+                    show_nand_file_info();
+                }
+            }
+
+            if (input & INPUT_DOWN)
+            {
+                if (nand_entries[nand_selection].name[0] != '\0' &&
+                    strcmp(nand_entries[nand_selection].name, "title.tmd") == 0 &&
+                    nand_tmd_scroll + 8 < (int)nand_tmd_content_count)
+                {
+                    nand_tmd_scroll++;
+                    show_nand_file_info();
+                }
+            }
+
             if (input & INPUT_BACK)
             {
                 screen = 15;
