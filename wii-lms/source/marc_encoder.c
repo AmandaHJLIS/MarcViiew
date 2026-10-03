@@ -25,7 +25,7 @@ int marcviiew_encode_database(
     size_t record_count;
 
     int result;
-    int status;
+    MARC_Result status;
 
 
     if (input_path == NULL ||
@@ -128,7 +128,7 @@ int marcviiew_encode_database(
         );
 
 
-        if (status != 0)
+        if (status != MARC_SUCCESS)
         {
             fclose(output);
             fclose(input);
@@ -198,7 +198,7 @@ int marcviiew_encode_game(
     MARC_Record *record;
 
     int result;
-    int status;
+    MARC_Result status;
 
     const char *record_id;
 
@@ -317,7 +317,7 @@ int marcviiew_encode_game(
             marc_record_free(record);
 
 
-            if (status != 0)
+            if (status != MARC_SUCCESS)
             {
                 fclose(output);
                 fclose(input);

@@ -428,13 +428,41 @@ static int imported_get_id(const char *filename, char *id)
 
     id_length = (size_t)(dot - (filename + 10));
 
-    if (id_length != 6)
-        return 0;
+    /*
+     * Accept both unbracketed and bracketed filenames. Wii software
+     * identifiers are not all the same length: disc-style records
+     * may use six-character IDs, while channel/WiiWare records can
+     * use four-character IDs such as HCMP.
+     *
+     * Examples:
+     *   marcviiew_HCMP.mrc
+     *   marcviiew_[HCMP].mrc
+     *   marcviiew_RMCP01.mrc
+     *   marcviiew_[RMCP01].mrc
+     */
+    if (id_length >= 4 && id_length <= 6)
+    {
+        memcpy(id, filename + 10, id_length);
+        id[id_length] = '\0';
+        return 1;
+    }
 
-    memcpy(id, filename + 10, 6);
-    id[6] = '\0';
+    if (id_length >= 6 && id_length <= 8 &&
+        filename[10] == '[' &&
+        filename[id_length + 9] == ']')
+    {
+        size_t bracketed_id_length = id_length - 2;
 
-    return 1;
+        if (bracketed_id_length >= 4 &&
+            bracketed_id_length <= 6)
+        {
+            memcpy(id, filename + 11, bracketed_id_length);
+            id[bracketed_id_length] = '\0';
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 static int imported_subfield(
@@ -554,6 +582,41 @@ static int imported_id_exists(const char *game_id)
     return 0;
 }
 
+static int imported_persistent_id_exists(const char *game_id)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    if (game_id == NULL || game_id[0] == '\0')
+        return 0;
+
+    dir = opendir("sd:/marcviiew/imported");
+
+    if (dir == NULL)
+        return 0;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        char existing_id[IMPORTED_RECORD_ID_LENGTH];
+        const char *extension = strrchr(entry->d_name, '.');
+
+        if (entry->d_name[0] == '.' ||
+            extension == NULL ||
+            strcmp(extension, ".mrc") != 0)
+            continue;
+
+        if (imported_get_id(entry->d_name, existing_id) &&
+            strcmp(existing_id, game_id) == 0)
+        {
+            closedir(dir);
+            return 1;
+        }
+    }
+
+    closedir(dir);
+    return 0;
+}
+
 static void imported_scan_directory(const char *directory)
 {
     DIR *dir;
@@ -577,36 +640,75 @@ static void imported_scan_directory(const char *directory)
         if (incoming)
         {
             char game_id[IMPORTED_RECORD_ID_LENGTH];
-            char imported_path[256];
+            char incoming_path[512];
+            char imported_path[512];
 
-            if (imported_get_id(entry->d_name, game_id))
+            /*
+             * Imported records use the marcviiew_GAMEID.mrc naming
+             * convention. New incoming records are moved into the
+             * persistent collection as soon as they are discovered.
+             */
+            if (!imported_get_id(entry->d_name, game_id))
+                continue;
+
+            snprintf(
+                incoming_path,
+                sizeof(incoming_path),
+                "sd:/marcviiew_import/%s",
+                entry->d_name
+            );
+
+            snprintf(
+                imported_path,
+                sizeof(imported_path),
+                "sd:/marcviiew/imported/%s",
+                entry->d_name
+            );
+
+            /*
+             * A record already present in the persistent collection
+             * is a duplicate. Remove only the incoming duplicate.
+             */
+            if (imported_id_exists(game_id) ||
+                imported_persistent_id_exists(game_id) ||
+                access(imported_path, F_OK) == 0)
             {
-                snprintf(
-                    imported_path,
-                    sizeof(imported_path),
-                    "sd:/marcviiew/imported/%s",
-                    entry->d_name
-                );
-
-                if (imported_id_exists(game_id) ||
-                    access(imported_path, F_OK) == 0)
-                {
-                    {
-                        char incoming_path[256];
-
-                        snprintf(
-                            incoming_path,
-                            sizeof(incoming_path),
-                            "sd:/marcviiew_import/%s",
-                            entry->d_name
-                        );
-
-                        unlink(
-                            incoming_path
-                        );
-                    }
-                }
+                /*
+                 * Incoming records are temporary. Once a matching
+                 * persistent record exists, remove the incoming copy.
+                 *
+                 * Use remove() here rather than relying on the POSIX
+                 * unlink() wrapper, since MarcViiew runs through libfat
+                 * on Wii SD/USB filesystems.
+                 */
+                remove(incoming_path);
+                continue;
             }
+
+            /*
+             * Move the new record into persistent storage. If the
+             * move fails, still index the incoming file so it remains
+             * visible and can be opened.
+             */
+            if (rename(incoming_path, imported_path) != 0)
+            {
+                /*
+                 * If the move fails because a persistent copy appeared
+                 * between the checks above, remove the incoming copy.
+                 * Otherwise keep it visible for another import attempt.
+                 */
+                if (access(imported_path, F_OK) == 0)
+                    remove(incoming_path);
+                else
+                    imported_add_filename(entry->d_name);
+
+                continue;
+            }
+
+            if (imported_record_count < MAX_IMPORTED_RECORDS)
+                imported_add_filename(entry->d_name);
+
+            continue;
         }
 
         if (imported_record_count >= MAX_IMPORTED_RECORDS)
@@ -652,12 +754,7 @@ void extract_game_id(
         strlen(start) >= 8
     ) {
 
-        strncpy(
-            id,
-            start + 1,
-            6
-        );
-
+        memcpy(id, start + 1, 6);
         id[6] = '\0';
 
     } else {
@@ -1121,12 +1218,8 @@ void scan_storage(
             games[game_count].title
         );
 
-        strncpy(
-            games[game_count].id,
-            discovered_id,
-            sizeof(games[game_count].id) - 1
-        );
-        games[game_count].id[sizeof(games[game_count].id) - 1] = '\0';
+        memcpy(games[game_count].id, discovered_id, 6);
+        games[game_count].id[6] = '\0';
 
         setup_game_metadata(&games[game_count]);
         add_game_source(&games[game_count], source);
@@ -1152,8 +1245,8 @@ static void scan_digital_titles(const char *root_path, const char *source)
 
     while ((entry = readdir(dir)) != NULL)
     {
-        char title_directory[256];
-        char content_path[256];
+        char title_directory[512];
+        char content_path[512];
         char code[7];
         size_t length;
         FILE *content;
@@ -1221,11 +1314,8 @@ static void scan_digital_titles(const char *root_path, const char *source)
 
         memset(&games[game_count], 0, sizeof(Game));
 
-        strncpy(
-            games[game_count].id,
-            code,
-            sizeof(games[game_count].id) - 1
-        );
+        memcpy(games[game_count].id, code, 6);
+        games[game_count].id[6] = '\0';
 
         strncpy(
             games[game_count].title,
@@ -1348,11 +1438,8 @@ static void scan_nand_catalogue(void)
             sizeof(Game)
         );
 
-        strncpy(
-            games[game_count].id,
-            code,
-            sizeof(games[game_count].id) - 1
-        );
+        memcpy(games[game_count].id, code, 6);
+        games[game_count].id[6] = '\0';
 
         strncpy(
             games[game_count].title,
@@ -1574,17 +1661,12 @@ void add_info_line(
     )
         return;
 
-    strncpy(
+    snprintf(
         info_lines[*line_count],
-        text,
-        INFO_LINE_LENGTH - 1
+        INFO_LINE_LENGTH,
+        "%s",
+        text
     );
-
-    info_lines[
-        *line_count
-    ][
-        INFO_LINE_LENGTH - 1
-    ] = '\0';
 
     (*line_count)++;
 }
@@ -1922,19 +2004,12 @@ void add_marc_line(
     )
         return;
 
-    strncpy(
-        marc_lines[
-            marc_line_count
-        ],
-        text,
-        MARC_LINE_LENGTH - 1
+    snprintf(
+        marc_lines[marc_line_count],
+        MARC_LINE_LENGTH,
+        "%s",
+        text
     );
-
-    marc_lines[
-        marc_line_count
-    ][
-        MARC_LINE_LENGTH - 1
-    ] = '\0';
 
     marc_line_count++;
 }
@@ -2187,7 +2262,7 @@ static MARC_Record *read_mrc_record(FILE *file)
     if (record == NULL)
         return NULL;
 
-    if (marc_record_read(record, file) != 0)
+    if (marc_record_read(record, file) != MARC_SUCCESS)
     {
         marc_record_free(record);
         return NULL;
@@ -2228,15 +2303,12 @@ static void imported_update_metadata_from_record(
 
         if (value != NULL && value[0] != '\0')
         {
-            strncpy(
+            snprintf(
                 imported->marc_001,
-                value,
-                sizeof(imported->marc_001) - 1
+                sizeof(imported->marc_001),
+                "%s",
+                value
             );
-
-            imported->marc_001[
-                sizeof(imported->marc_001) - 1
-            ] = '\0';
         }
     }
 }
@@ -2583,15 +2655,12 @@ void perform_marc_search() {
             }
 
 
-            strncpy(
+            snprintf(
                 current_game_id,
-                line + 8,
-                sizeof(current_game_id) - 1
+                sizeof(current_game_id),
+                "%s",
+                line + 8
             );
-
-            current_game_id[
-                sizeof(current_game_id) - 1
-            ] = '\0';
 
 
             in_record = 1;
@@ -5522,6 +5591,14 @@ int main(void)
             if (input & INPUT_BACK)
             {
                 screen = 13;
+
+                /*
+                 * Refresh the imported-record index when returning
+                 * from a record viewer so newly added .mrc files are
+                 * visible immediately.
+                 */
+                scan_imported_records();
+
                 show_imported_menu();
             }
 
@@ -5910,6 +5987,15 @@ int main(void)
                     screen = 13;
                     imported_selection = 0;
                     imported_scroll = 0;
+
+                    /*
+                     * Refresh the imported-record index whenever the
+                     * Imported Records screen is entered. This allows
+                     * newly copied .mrc files in sd:/marcviiew_import
+                     * to appear without restarting MarcViiew.
+                     */
+                    scan_imported_records();
+
                     show_imported_menu();
 
                 }
