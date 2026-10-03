@@ -6579,6 +6579,55 @@ int main(void)
                     menu_selection == 5
                 ) {
 
+                    nand_selection = 0;
+                    nand_scroll = 0;
+                    nand_status[0] = '\0';
+
+                    if (!nand_initialized)
+                    {
+                        s32 result = ISFS_Initialize();
+
+                        if (result != ISFS_OK)
+                        {
+                            snprintf(
+                                nand_status,
+                                sizeof(nand_status),
+                                "ISFS initialization failed (%d).",
+                                (int)result
+                            );
+                        }
+                        else
+                        {
+                            nand_initialized = 1;
+                        }
+                    }
+
+                    if (nand_initialized)
+                    {
+                        strcpy(
+                            nand_current_path,
+                            "/"
+                        );
+
+                        if (!nand_load_directory(nand_current_path))
+                        {
+                            snprintf(
+                                nand_status,
+                                sizeof(nand_status),
+                                "Could not read NAND root directory."
+                            );
+                        }
+                    }
+
+                    screen = 15;
+
+                    show_nand_browser();
+                }
+
+                else if (
+                    menu_selection == 6
+                ) {
+
                     screen = 9;
 
                     settings_selection = 0;
