@@ -3947,8 +3947,6 @@ static int nand_load_directory(const char *path)
      */
     if (strncmp(path, "/title/", 7) == 0)
     {
-        nand_load_tmd_for_path(path);
-
         /*
          * ES_Identify is the normal IOS mechanism for temporarily
          * adopting a title's NAND permissions. Once the IOS ES
@@ -5200,7 +5198,16 @@ static void show_nand_file_info(void)
 
     {
         u32 content_id;
-        const NandContentInfo *content_info =
+        const NandContentInfo *content_info;
+
+        /*
+         * Load the TMD lazily here rather than while entering a title
+         * directory. Some titles expose their content directory through
+         * IOS in ways that make an eager TMD read unsafe on real NAND.
+         */
+        nand_load_tmd_for_path(entry->path);
+
+        content_info =
             nand_parse_content_id(entry->name, &content_id)
                 ? nand_find_content_info(content_id)
                 : NULL;
