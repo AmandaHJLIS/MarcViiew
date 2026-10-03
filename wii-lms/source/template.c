@@ -882,8 +882,15 @@ void copy_database_value(
     int destination_size
 ) {
 
-    int field_length =
-        strlen(field);
+    size_t field_length;
+
+    if (line == NULL ||
+        field == NULL ||
+        destination == NULL ||
+        destination_size <= 0)
+        return;
+
+    field_length = strlen(field);
 
     if (
         strncmp(
@@ -1123,6 +1130,9 @@ int load_game_database() {
 
 static void add_game_source(Game *game, const char *source)
 {
+    size_t current_length;
+    size_t source_length;
+
     if (game == NULL || source == NULL || source[0] == '\0')
         return;
 
@@ -1131,22 +1141,61 @@ static void add_game_source(Game *game, const char *source)
 
     if (strcmp(game->source, "Unknown") == 0)
     {
-        strncpy(game->source, source, sizeof(game->source) - 1);
-        game->source[sizeof(game->source) - 1] = '\0';
+        snprintf(
+            game->source,
+            sizeof(game->source),
+            "%s",
+            source
+        );
         return;
     }
 
-    if (strstr(game->source, source) != NULL)
-        return;
+    current_length = strlen(game->source);
+    source_length = strlen(source);
 
-    if (strlen(game->source) + strlen(source) + 3 < sizeof(game->source))
+    /*
+     * Sources are stored as a small human-readable list. Check each
+     * complete source token rather than using an unbounded substring
+     * test, so one source name cannot accidentally match part of
+     * another.
+     */
     {
-        strcat(game->source, " + ");
-        strcat(game->source, source);
+        const char *cursor = game->source;
+
+        while (*cursor != '\0')
+        {
+            const char *end = strstr(cursor, " + ");
+            size_t length = end != NULL
+                ? (size_t)(end - cursor)
+                : strlen(cursor);
+
+            if (length == source_length &&
+                strncmp(cursor, source, length) == 0)
+                return;
+
+            if (end == NULL)
+                break;
+
+            cursor = end + 3;
+        }
+    }
+
+    if (current_length + source_length + 3 < sizeof(game->source))
+    {
+        snprintf(
+            game->source + current_length,
+            sizeof(game->source) - current_length,
+            " + %s",
+            source
+        );
     }
     else
     {
-        strcpy(game->source, "Multiple");
+        snprintf(
+            game->source,
+            sizeof(game->source),
+            "Multiple"
+        );
     }
 }
 
@@ -1249,6 +1298,7 @@ static void scan_digital_titles(const char *root_path, const char *source)
         char content_path[512];
         char code[7];
         size_t length;
+        struct stat title_status;
         FILE *content;
 
         if (entry->d_name[0] == '.')
@@ -1266,6 +1316,10 @@ static void scan_digital_titles(const char *root_path, const char *source)
             root_path,
             entry->d_name
         );
+
+        if (stat(title_directory, &title_status) != 0 ||
+            !S_ISDIR(title_status.st_mode))
+            continue;
 
         snprintf(
             content_path,
@@ -1361,8 +1415,12 @@ static void scan_nand_catalogue(void)
         return;
     }
 
+    /*
+     * ES_GetTitles() returns exactly title_count entries; no sentinel
+     * element is required.
+     */
     titles = malloc(
-        (title_count + 1) * sizeof(u64)
+        (size_t)title_count * sizeof(*titles)
     );
 
     if (titles == NULL)
