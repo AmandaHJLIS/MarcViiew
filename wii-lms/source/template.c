@@ -4502,6 +4502,55 @@ static int nand_parse_content_id(
     return 1;
 }
 
+static int nand_find_shared_content(
+    const NandContentInfo *content_info,
+    char *shared_name,
+    size_t shared_name_size
+)
+{
+    char map_path[] = "/shared1/content.map";
+    u8 record[28] ATTRIBUTE_ALIGN(32);
+    s32 fd;
+    s32 bytes_read;
+
+    if (content_info == NULL ||
+        shared_name == NULL ||
+        shared_name_size < 9 ||
+        content_info->type != 0x8001)
+        return 0;
+
+    shared_name[0] = '\0';
+
+    fd = ISFS_Open(map_path, ISFS_OPEN_READ);
+    if (fd < 0)
+        return 0;
+
+    while (1)
+    {
+        bytes_read = ISFS_Read(fd, record, sizeof(record));
+
+        if (bytes_read == 0)
+            break;
+
+        if (bytes_read != (s32)sizeof(record))
+        {
+            ISFS_Close(fd);
+            return 0;
+        }
+
+        if (memcmp(&record[8], content_info->hash, 20) == 0)
+        {
+            memcpy(shared_name, record, 8);
+            shared_name[8] = '\0';
+            ISFS_Close(fd);
+            return 1;
+        }
+    }
+
+    ISFS_Close(fd);
+    return 0;
+}
+
 static int nand_load_tmd_for_path(const char *path)
 {
     char title_path[ISFS_MAXPATH];
@@ -5174,7 +5223,7 @@ static void show_nand_file_info(void)
 
         printf("\n");
         print_centered("TMD Content Records");
-        print_centered("ID       Index Type   Size (bytes)  SHA-1");
+        print_centered("ID       Index Type   Size (bytes)  Storage");
 
         if (nand_tmd_content_count == 0)
         {
@@ -5198,19 +5247,50 @@ static void show_nand_file_info(void)
             {
                 const NandContentInfo *content_info =
                     &nand_tmd_contents[i];
-                char hash_text[32];
+                char storage_text[32];
 
-                snprintf(
-                    hash_text,
-                    sizeof(hash_text),
-                    "%02x%02x%02x%02x...%02x%02x",
-                    content_info->hash[0],
-                    content_info->hash[1],
-                    content_info->hash[2],
-                    content_info->hash[3],
-                    content_info->hash[18],
-                    content_info->hash[19]
-                );
+                if (content_info->type == 0x8001)
+                {
+                    char shared_name[9];
+
+                    if (nand_find_shared_content(
+                            content_info,
+                            shared_name,
+                            sizeof(shared_name)))
+                    {
+                        snprintf(
+                            storage_text,
+                            sizeof(storage_text),
+                            "SHARED %s.app",
+                            shared_name
+                        );
+                    }
+                    else
+                    {
+                        snprintf(
+                            storage_text,
+                            sizeof(storage_text),
+                            "SHARED ?"
+                        );
+                    }
+                }
+                else if (content_info->type == 0x4001)
+                {
+                    snprintf(
+                        storage_text,
+                        sizeof(storage_text),
+                        "OPTIONAL"
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        storage_text,
+                        sizeof(storage_text),
+                        "TITLE %08x.app",
+                        (unsigned int)content_info->content_id
+                    );
+                }
 
                 if ((content_info->size >> 32) == 0)
                 {
@@ -5222,7 +5302,7 @@ static void show_nand_file_info(void)
                         (unsigned int)content_info->index,
                         (unsigned int)content_info->type,
                         (unsigned int)content_info->size,
-                        hash_text
+                        storage_text
                     );
                 }
                 else
@@ -5236,7 +5316,7 @@ static void show_nand_file_info(void)
                         (unsigned int)content_info->type,
                         (unsigned int)(content_info->size >> 32),
                         (unsigned int)(content_info->size & 0xFFFFFFFF),
-                        hash_text
+                        storage_text
                     );
                 }
 
@@ -5324,6 +5404,60 @@ static void show_nand_file_info(void)
 
     snprintf(line, sizeof(line), "Size: %s", size_text);
     print_centered(line);
+
+    /*
+     * Read-only raw header preview for arbitrary NAND files. This is
+     * intentionally small so files such as banner.bin and savedata.dat
+     * can be identified without parsing or modifying their contents.
+     */
+    {
+        u8 header[32] ATTRIBUTE_ALIGN(32);
+        char hex_text[96];
+        s32 fd;
+        s32 bytes_read;
+        u32 i;
+        size_t out = 0;
+
+        memset(header, 0, sizeof(header));
+
+        fd = ISFS_Open(entry->path, ISFS_OPEN_READ);
+
+        if (fd >= 0)
+        {
+            bytes_read = ISFS_Read(
+                fd,
+                header,
+                sizeof(header)
+            );
+
+            ISFS_Close(fd);
+
+            if (bytes_read > 0)
+            {
+                u32 header_bytes = (u32)bytes_read;
+
+                if (header_bytes > sizeof(header))
+                    header_bytes = sizeof(header);
+
+                for (i = 0; i < header_bytes && out + 3 < sizeof(hex_text); ++i)
+                {
+                    snprintf(
+                        &hex_text[out],
+                        sizeof(hex_text) - out,
+                        "%02x ",
+                        header[i]
+                    );
+                    out += 3;
+                }
+
+                if (out > 0)
+                    hex_text[out - 1] = '\0';
+
+                print_centered("First 32 bytes:");
+                print_centered(hex_text);
+            }
+        }
+    }
 
     {
         u32 content_id;
