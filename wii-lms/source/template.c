@@ -5966,6 +5966,104 @@ int main(void)
 
 
         /*
+            NAND Root Navigation.
+        */
+        if (screen == 15)
+        {
+            if (input & INPUT_UP)
+            {
+                if (nand_selection > 0)
+                {
+                    nand_selection--;
+
+                    if (nand_selection < nand_scroll)
+                        nand_scroll--;
+
+                    show_nand_browser();
+                }
+            }
+
+            if (input & INPUT_DOWN)
+            {
+                if (nand_selection <
+                    (int)nand_entry_count - 1)
+                {
+                    nand_selection++;
+
+                    if (nand_selection >=
+                        nand_scroll + GAME_LIST_VISIBLE_ITEMS)
+                        nand_scroll++;
+
+                    show_nand_browser();
+                }
+            }
+
+            if (input & INPUT_SELECT)
+            {
+                if (nand_entry_count > 0)
+                {
+                    if (nand_entries[nand_selection].type ==
+                        NAND_ENTRY_DIRECTORY)
+                    {
+                        if (!nand_enter_selected())
+                            show_nand_browser();
+                        else
+                            show_nand_browser();
+                    }
+                    else if (nand_entries[nand_selection].type ==
+                             NAND_ENTRY_FILE)
+                    {
+                        screen = 16;
+                        show_nand_file_info();
+                    }
+                }
+            }
+
+            if (input & INPUT_BACK)
+            {
+                if (!nand_go_parent())
+                {
+                    screen = 1;
+                    show_main_menu();
+                }
+                else
+                {
+                    show_nand_browser();
+                }
+            }
+
+            if (input & INPUT_PLUS)
+            {
+                screen = 1;
+                show_main_menu();
+            }
+
+            VIDEO_WaitVSync();
+            continue;
+        }
+
+        /*
+            NAND File Information.
+        */
+        if (screen == 16)
+        {
+            if (input & INPUT_BACK)
+            {
+                screen = 15;
+                show_nand_browser();
+            }
+
+            if (input & INPUT_PLUS)
+            {
+                screen = 1;
+                show_main_menu();
+            }
+
+            VIDEO_WaitVSync();
+            continue;
+        }
+
+        /*
             Imported Records list.
         */
         if (screen == 13)
