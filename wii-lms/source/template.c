@@ -1580,9 +1580,9 @@ static void scan_nand_catalogue(void)
 
 
 /*
-    NAND scanning discovers installed WiiWare and
-    Virtual Console title IDs. Metadata is filled
-    afterwards by the normal game database loader.
+    NAND scanning discovers installed title IDs. The normal game
+    database is loaded afterwards so newly discovered NAND records
+    can be filled with their derived MarcViiew metadata.
 */
 
 void scan_catalogue() {
@@ -4324,18 +4324,38 @@ static int nand_read_title_name(
 static const char *nand_database_title(const char *title_id)
 {
     int existing;
+    char decoded_id[8];
 
     if (title_id == NULL || title_id[0] == '\0')
         return NULL;
 
+    /*
+     * The NAND title directory is the authoritative GAMEID we display.
+     * MarcViiew's derived database may store a four-character GAMEID
+     * directly (for example NALE), while an ES title ID can appear as
+     * its hexadecimal byte representation (for example 4E414C45).
+     *
+     * Try the directory value first, then the decoded four-character
+     * form when the directory is an 8-digit hexadecimal title ID.
+     */
     existing = find_game_by_id(title_id);
 
-    if (existing < 0 || games[existing].title[0] == '\0')
+    if (existing >= 0 &&
+        games[existing].title[0] != '\0' &&
+        strcmp(games[existing].title, title_id) != 0)
+        return games[existing].title;
+
+    if (!nand_decode_title_id(
+            title_id,
+            decoded_id,
+            sizeof(decoded_id)))
         return NULL;
 
-    /* A newly discovered NAND title starts with its decoded ID as its
-       placeholder title. Only treat a different title as a database match. */
-    if (strcmp(games[existing].title, title_id) == 0)
+    existing = find_game_by_id(decoded_id);
+
+    if (existing < 0 ||
+        games[existing].title[0] == '\0' ||
+        strcmp(games[existing].title, decoded_id) == 0)
         return NULL;
 
     return games[existing].title;
@@ -4521,79 +4541,40 @@ static void show_nand_browser(void)
                 title_id,
                 sizeof(title_id)))
         {
-            char title_code[8];
-            char title_name[128];
+            /*
+             * Keep the NAND identifiers literal here. The first
+             * directory under /title/ is the raw title type and the
+             * second directory is the NAND GAMEID.
+             */
+            snprintf(
+                line,
+                sizeof(line),
+                "Title type: %s",
+                title_type
+            );
+            print_centered(line);
 
             snprintf(
                 line,
                 sizeof(line),
-                "Title type: %s (%s)",
-                title_type,
-                nand_title_type_name(title_type)
+                "Title ID: %s",
+                title_id
             );
-            print_centered(line);
-
-            if (nand_decode_title_id(
-                    title_id,
-                    title_code,
-                    sizeof(title_code)))
-            {
-                snprintf(
-                    line,
-                    sizeof(line),
-                    "Title ID: %s (%s)",
-                    title_id,
-                    title_code
-                );
-            }
-            else
-            {
-                snprintf(
-                    line,
-                    sizeof(line),
-                    "Title ID: %s",
-                    title_id
-                );
-            }
             print_centered(line);
 
             {
                 const char *database_title =
                     nand_database_title(title_id);
 
-                if (database_title != NULL)
-                {
-                    snprintf(
-                        line,
-                        sizeof(line),
-                        "Database title: %s",
-                        database_title
-                    );
-                    print_centered(line);
-                }
-                else if (nand_read_title_name(
-                    nand_current_path,
-                    title_name,
-                    sizeof(title_name)))
-                {
-                    snprintf(
-                        line,
-                        sizeof(line),
-                        "Title name: %s",
-                        title_name
-                    );
-                    print_centered(line);
-                }
-                else
-                {
-                    snprintf(
-                        line,
-                        sizeof(line),
-                        "Title name: %s",
-                        nand_title_type_name(title_type)
-                    );
-                    print_centered(line);
-                }
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "Title name: %s",
+                    database_title != NULL
+                        ? database_title
+                        : "Unknown"
+                );
+                print_centered(line);
             }
         }
     }
