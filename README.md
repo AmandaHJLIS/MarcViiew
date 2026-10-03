@@ -269,20 +269,17 @@ These conventions may change as MarcViiew's cataloguing model develops.
 * Wiiext controlled vocabulary and thesaurus support
 
 ## Current Development Focus
-
-The major catalogue-discovery and beta feature work for this experimental branch is substantially implemented and has been tested on real Wii hardware.
+The major catalogue-discovery and beta feature work is substantially implemented and has been tested on real Wii hardware.
 
 Current development areas include:
 
-* Further MARC 21 validation and interoperability work
-* Further ISO 2709 compatibility and edge-case testing
-* NAND and WiiWare file-structure research and browser development
-* Further catalogue and Wii user-interface refinement
-* Additional metadata research and cataloguing-profile research
-* Wii performance and memory optimisation
-* Continued hardware regression testing
-* Smaller cleanup, bug fixes, and reliability improvements ahead of the 0.8.0-beta milestone
-* Reviewing experimental changes before they are considered for `main`
+Further MARC 21 validation and interoperability work
+Further ISO 2709 compatibility and edge-case testing
+Catalogue and Wii user-interface refinement
+Additional metadata research and cataloguing-profile research
+Wii performance and memory optimisation
+Continued hardware regression testing
+Future experimental functionality before stable integration
 
 ## Long-Term Planned Features
 
