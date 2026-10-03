@@ -3853,10 +3853,16 @@ static int nand_load_directory(const char *path)
     if (read_count > NAND_MAX_ENTRIES)
         read_count = NAND_MAX_ENTRIES;
 
+    /*
+     * ISFS_ReadDir() returns a sequence of NUL-terminated names,
+     * not a fixed-width array of NAND_ENTRY_NAME_LENGTH-byte slots.
+     * Allocate enough room for the maximum ISFS path-sized name
+     * for every entry, then advance through the buffer by strlen().
+     */
     name_buffer =
         (char *)memalign(
             32,
-            (size_t)read_count * NAND_ENTRY_NAME_LENGTH
+            (size_t)read_count * ISFS_MAXPATH
         );
 
     if (name_buffer == NULL)
@@ -3875,11 +3881,13 @@ static int nand_load_directory(const char *path)
         return 0;
     }
 
-    for (i = 0; i < read_count; ++i)
     {
-        NandEntry *entry = &nand_entries[nand_entry_count];
-        const char *name = name_buffer + (i * NAND_ENTRY_NAME_LENGTH);
-        u32 child_count = 0;
+        const char *name = name_buffer;
+
+        for (i = 0; i < read_count; ++i)
+        {
+            NandEntry *entry = &nand_entries[nand_entry_count];
+            u32 child_count = 0;
         s32 fd;
 
         memset(entry, 0, sizeof(*entry));
@@ -3940,7 +3948,10 @@ static int nand_load_directory(const char *path)
                 entry->type = NAND_ENTRY_UNKNOWN;
         }
 
-        nand_entry_count++;
+            nand_entry_count++;
+
+            name += strlen(name) + 1;
+        }
     }
 
     free(name_buffer);
