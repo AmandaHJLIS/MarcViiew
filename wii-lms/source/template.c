@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <malloc.h>
 
 #include <gccore.h>
 #include <wiiuse/wpad.h>
@@ -398,6 +399,31 @@ static int imported_record_count = 0;
 static int imported_selection = 0;
 static int imported_scroll = 0;
 
+#define NAND_ENTRY_NAME_LENGTH 13
+#define NAND_MAX_ENTRIES 512
+
+#define NAND_ENTRY_DIRECTORY 1
+#define NAND_ENTRY_FILE 2
+#define NAND_ENTRY_UNKNOWN 3
+
+typedef struct
+{
+    char name[NAND_ENTRY_NAME_LENGTH];
+    char path[ISFS_MAXPATH];
+    u32 size;
+    u8 type;
+} NandEntry;
+
+static NandEntry nand_entries[NAND_MAX_ENTRIES];
+static u32 nand_entry_count = 0;
+static u32 nand_total_entry_count = 0;
+static int nand_selection = 0;
+static int nand_scroll = 0;
+static int nand_initialized = 0;
+static char nand_current_path[ISFS_MAXPATH] = "/";
+
+static fstats nand_file_stats ATTRIBUTE_ALIGN(32);
+
 static MARC_Record *loaded_marc_record = NULL;
 
 static void render_marc_record(MARC_Record *record);
@@ -461,6 +487,9 @@ static int imported_get_id(const char *filename, char *id)
             return 1;
         }
     }
+
+    if (nand_initialized)
+        ISFS_Deinitialize();
 
     return 0;
 }
@@ -3793,6 +3822,364 @@ void show_encode_game_menu() {
 }
 
 
+static void show_nand_browser(void);
+static void show_nand_file_info(void);
+
+static int nand_load_directory(const char *path)
+{
+    u32 entry_count = 0;
+    u32 read_count;
+    char *name_buffer;
+    s32 result;
+    u32 i;
+
+    if (path == NULL || path[0] == '\0')
+        return 0;
+
+    result = ISFS_ReadDir(path, NULL, &entry_count);
+
+    if (result != ISFS_OK)
+        return 0;
+
+    nand_total_entry_count = entry_count;
+    nand_entry_count = 0;
+    nand_selection = 0;
+    nand_scroll = 0;
+
+    if (entry_count == 0)
+        return 1;
+
+    read_count = entry_count;
+
+    if (read_count > NAND_MAX_ENTRIES)
+        read_count = NAND_MAX_ENTRIES;
+
+    name_buffer =
+        (char *)memalign(
+            32,
+            (size_t)read_count * NAND_ENTRY_NAME_LENGTH
+        );
+
+    if (name_buffer == NULL)
+        return 0;
+
+    result =
+        ISFS_ReadDir(
+            path,
+            name_buffer,
+            &read_count
+        );
+
+    if (result != ISFS_OK)
+    {
+        free(name_buffer);
+        return 0;
+    }
+
+    for (i = 0; i < read_count; ++i)
+    {
+        NandEntry *entry = &nand_entries[nand_entry_count];
+        const char *name = name_buffer + (i * NAND_ENTRY_NAME_LENGTH);
+        u32 child_count = 0;
+        s32 fd;
+
+        memset(entry, 0, sizeof(*entry));
+
+        snprintf(
+            entry->name,
+            sizeof(entry->name),
+            "%s",
+            name
+        );
+
+        if (strcmp(path, "/") == 0)
+        {
+            snprintf(
+                entry->path,
+                sizeof(entry->path),
+                "/%s",
+                entry->name
+            );
+        }
+        else
+        {
+            snprintf(
+                entry->path,
+                sizeof(entry->path),
+                "%s/%s",
+                path,
+                entry->name
+            );
+        }
+
+        /*
+         * ISFS does not return a type flag from ISFS_ReadDir().
+         * A successful directory read identifies directories; files
+         * are then inspected read-only with ISFS_Open/GetFileStats.
+         */
+        if (ISFS_ReadDir(entry->path, NULL, &child_count) == ISFS_OK)
+        {
+            entry->type = NAND_ENTRY_DIRECTORY;
+            entry->size = child_count;
+        }
+        else
+        {
+            fd = ISFS_Open(entry->path, ISFS_OPEN_READ);
+
+            if (fd >= 0)
+            {
+                if (ISFS_GetFileStats(fd, &nand_file_stats) == ISFS_OK)
+                {
+                    entry->type = NAND_ENTRY_FILE;
+                    entry->size = nand_file_stats.file_length;
+                }
+
+                ISFS_Close(fd);
+            }
+
+            if (entry->type == 0)
+                entry->type = NAND_ENTRY_UNKNOWN;
+        }
+
+        nand_entry_count++;
+    }
+
+    free(name_buffer);
+    return 1;
+}
+
+static void nand_format_size(u32 size, char *output, size_t output_size)
+{
+    if (size >= 1024 * 1024)
+    {
+        snprintf(
+            output,
+            output_size,
+            "%.2f MiB",
+            (double)size / (1024.0 * 1024.0)
+        );
+    }
+    else if (size >= 1024)
+    {
+        snprintf(
+            output,
+            output_size,
+            "%.2f KiB",
+            (double)size / 1024.0
+        );
+    }
+    else
+    {
+        snprintf(
+            output,
+            output_size,
+            "%u B",
+            (unsigned int)size
+        );
+    }
+}
+
+static int nand_go_parent(void)
+{
+    char *last_slash;
+
+    if (strcmp(nand_current_path, "/") == 0)
+        return 0;
+
+    last_slash = strrchr(nand_current_path, '/');
+
+    if (last_slash == NULL || last_slash == nand_current_path)
+        strcpy(nand_current_path, "/");
+    else
+        *last_slash = '\0';
+
+    if (!nand_load_directory(nand_current_path))
+    {
+        strcpy(nand_current_path, "/");
+        nand_load_directory(nand_current_path);
+    }
+
+    return 1;
+}
+
+static int nand_enter_selected(void)
+{
+    NandEntry *entry;
+
+    if (nand_entry_count == 0 ||
+        nand_selection < 0 ||
+        (u32)nand_selection >= nand_entry_count)
+        return 0;
+
+    entry = &nand_entries[nand_selection];
+
+    if (entry->type != NAND_ENTRY_DIRECTORY)
+        return 0;
+
+    snprintf(
+        nand_current_path,
+        sizeof(nand_current_path),
+        "%s",
+        entry->path
+    );
+
+    return nand_load_directory(nand_current_path);
+}
+
+static void show_nand_browser(void)
+{
+    int i;
+    int visible_end;
+    char line[160];
+
+    printf("\x1b[2J\x1b[H");
+    print_ui_line('=');
+    print_centered("NAND Root Navigation");
+    print_ui_line('=');
+    printf("\n");
+
+    snprintf(
+        line,
+        sizeof(line),
+        "Path: %s",
+        nand_current_path
+    );
+    print_centered(line);
+
+    if (nand_total_entry_count > NAND_MAX_ENTRIES)
+    {
+        snprintf(
+            line,
+            sizeof(line),
+            "Showing first %u of %u entries",
+            (unsigned int)nand_entry_count,
+            (unsigned int)nand_total_entry_count
+        );
+        print_centered(line);
+    }
+
+    printf("\n");
+
+    if (nand_entry_count == 0)
+    {
+        print_centered("Directory is empty.");
+    }
+    else
+    {
+        if (nand_selection < 0)
+            nand_selection = 0;
+
+        if ((u32)nand_selection >= nand_entry_count)
+            nand_selection = (int)nand_entry_count - 1;
+
+        if (nand_scroll < 0)
+            nand_scroll = 0;
+
+        if (nand_selection < nand_scroll)
+            nand_scroll = nand_selection;
+
+        if (nand_selection >=
+            nand_scroll + GAME_LIST_VISIBLE_ITEMS)
+        {
+            nand_scroll =
+                nand_selection -
+                GAME_LIST_VISIBLE_ITEMS + 1;
+        }
+
+        visible_end =
+            nand_scroll + GAME_LIST_VISIBLE_ITEMS;
+
+        if ((u32)visible_end > nand_entry_count)
+            visible_end = (int)nand_entry_count;
+
+        for (i = nand_scroll; i < visible_end; ++i)
+        {
+            NandEntry *entry = &nand_entries[i];
+            char type;
+            char size_text[32];
+
+            if (entry->type == NAND_ENTRY_DIRECTORY)
+                type = 'D';
+            else if (entry->type == NAND_ENTRY_FILE)
+                type = 'F';
+            else
+                type = '?';
+
+            if (entry->type == NAND_ENTRY_FILE)
+                nand_format_size(
+                    entry->size,
+                    size_text,
+                    sizeof(size_text)
+                );
+            else if (entry->type == NAND_ENTRY_DIRECTORY)
+                snprintf(
+                    size_text,
+                    sizeof(size_text),
+                    "%u entries",
+                    (unsigned int)entry->size
+                );
+            else
+                snprintf(
+                    size_text,
+                    sizeof(size_text),
+                    "unknown"
+                );
+
+            snprintf(
+                line,
+                sizeof(line),
+                "%c [%c] %-12s %s",
+                i == nand_selection ? '>' : ' ',
+                type,
+                entry->name,
+                size_text
+            );
+
+            print_centered(line);
+        }
+    }
+
+    printf("\n");
+    print_centered("UP / DOWN = Move    A = Open");
+    print_centered("B = Back    PLUS = Main Menu");
+}
+
+static void show_nand_file_info(void)
+{
+    NandEntry *entry;
+    char line[160];
+    char size_text[32];
+
+    if (nand_entry_count == 0 ||
+        nand_selection < 0 ||
+        (u32)nand_selection >= nand_entry_count)
+        return;
+
+    entry = &nand_entries[nand_selection];
+
+    printf("\x1b[2J\x1b[H");
+    print_ui_line('=');
+    print_centered("NAND File Information");
+    print_ui_line('=');
+    printf("\n");
+
+    snprintf(line, sizeof(line), "Name: %s", entry->name);
+    print_centered(line);
+
+    snprintf(line, sizeof(line), "Path: %s", entry->path);
+    print_centered(line);
+
+    nand_format_size(entry->size, size_text, sizeof(size_text));
+
+    snprintf(line, sizeof(line), "Size: %s", size_text);
+    print_centered(line);
+
+    printf("\n");
+    print_centered("Read-only inspection");
+    printf("\n");
+    print_centered("B = Back    PLUS = Main Menu");
+}
+
 void show_main_menu() {
 
     printf(
@@ -3842,8 +4229,13 @@ void show_main_menu() {
     );
 
     print_menu_item(
-        "Settings",
+        "NAND Root Navigation",
         menu_selection == 5
+    );
+
+    print_menu_item(
+        "Settings",
+        menu_selection == 6
     );
 
 
@@ -6290,7 +6682,7 @@ int main(void)
             ) {
 
                 if (
-                    menu_selection < 5
+                    menu_selection < 6
                 ) {
 
                     menu_selection++;
