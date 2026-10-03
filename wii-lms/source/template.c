@@ -4096,82 +4096,217 @@ static const char *nand_title_type_name(const char *title_type)
     return "Unknown title type";
 }
 
+static u16 nand_read_be16(const u8 *data)
+{
+    return (u16)(((u16)data[0] << 8) | data[1]);
+}
+
+static u32 nand_read_be32(const u8 *data)
+{
+    return ((u32)data[0] << 24) |
+           ((u32)data[1] << 16) |
+           ((u32)data[2] << 8) |
+           (u32)data[3];
+}
+
 static int nand_read_title_name(
     const char *title_path,
     char *title_name,
     size_t title_name_size
 )
 {
-    char path[ISFS_MAXPATH];
+    char tmd_path[ISFS_MAXPATH];
+    char app_path[ISFS_MAXPATH];
     int fd;
-    char buffer[4096] ATTRIBUTE_ALIGN(32);
     s32 bytes_read;
-    const char *tags[] = {
-        "<longname_en>",
-        "<longname_jp>",
-        "<longname_fr>",
-        "<longname_de>",
-        "<longname_es>",
-        "<longname_it>"
-    };
-    size_t i;
+    u8 *tmd_buffer = NULL;
+    u8 banner_buffer[0x80 + 0x600] ATTRIBUTE_ALIGN(32);
+    u32 content_id = 0;
+    u16 content_count;
+    u16 content_index;
+    u32 i;
+    int found_content = 0;
+    const u8 *imet;
+    const u8 *name_table;
+    const u8 *name_utf16;
+    size_t j;
 
     if (title_path == NULL ||
         title_name == NULL ||
-        title_name_size == 0)
+        title_name_size < 2)
         return 0;
 
-    snprintf(path, sizeof(path), "%s/meta.xml", title_path);
+    title_name[0] = '\0';
 
-    fd = ISFS_Open(path, ISFS_OPEN_READ);
+    snprintf(tmd_path, sizeof(tmd_path), "%s/content/title.tmd", title_path);
+
+    fd = ISFS_Open(tmd_path, ISFS_OPEN_READ);
     if (fd < 0)
         return 0;
 
-    bytes_read = ISFS_Read(fd, buffer, sizeof(buffer) - 1);
+    {
+        u8 tmd_header[0x1E4 + 2] ATTRIBUTE_ALIGN(32);
+
+        bytes_read = ISFS_Read(fd, tmd_header, sizeof(tmd_header));
+
+        if (bytes_read != (s32)sizeof(tmd_header))
+        {
+            ISFS_Close(fd);
+            return 0;
+        }
+
+        content_count = nand_read_be16(&tmd_header[0x1DE]);
+    }
+
+    if (content_count == 0)
+    {
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    tmd_buffer = (u8 *)memalign(
+        32,
+        0x1E4 + ((size_t)content_count * 0x24)
+    );
+
+    if (tmd_buffer == NULL)
+    {
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    if (ISFS_Seek(fd, 0, SEEK_SET) < 0)
+    {
+        free(tmd_buffer);
+        ISFS_Close(fd);
+        return 0;
+    }
+
+    bytes_read = ISFS_Read(
+        fd,
+        tmd_buffer,
+        0x1E4 + ((size_t)content_count * 0x24)
+    );
+
     ISFS_Close(fd);
 
-    if (bytes_read <= 0)
+    if (bytes_read != (s32)(0x1E4 + ((size_t)content_count * 0x24)))
+    {
+        free(tmd_buffer);
+        return 0;
+    }
+
+    for (i = 0; i < content_count; ++i)
+    {
+        const u8 *content =
+            &tmd_buffer[0x1E4 + ((size_t)i * 0x24)];
+
+        content_index = nand_read_be16(&content[4]);
+
+        if (content_index == 0)
+        {
+            content_id = nand_read_be32(&content[0]);
+            found_content = 1;
+            break;
+        }
+    }
+
+    free(tmd_buffer);
+
+    if (!found_content)
         return 0;
 
-    buffer[bytes_read] = '\0';
+    snprintf(
+        app_path,
+        sizeof(app_path),
+        "%s/content/%08x.app",
+        title_path,
+        (unsigned int)content_id
+    );
 
-    for (i = 0; i < sizeof(tags) / sizeof(tags[0]); ++i)
+    fd = ISFS_Open(app_path, ISFS_OPEN_READ);
+    if (fd < 0)
+        return 0;
+
+    bytes_read = ISFS_Read(
+        fd,
+        banner_buffer,
+        sizeof(banner_buffer)
+    );
+
+    ISFS_Close(fd);
+
+    if (bytes_read < (s32)(0x80 + 0x600))
+        return 0;
+
+    imet = &banner_buffer[0x80];
+
+    if (imet[0] != 'I' ||
+        imet[1] != 'M' ||
+        imet[2] != 'E' ||
+        imet[3] != 'T')
+        return 0;
+
+    name_table = &imet[0x1C];
+
+    for (i = 0; i < 10; ++i)
     {
-        char end_tag[32];
-        char *start;
-        char *end;
-        size_t length;
+        name_utf16 = name_table + ((size_t)i * 84);
 
-        start = strstr((char *)buffer, tags[i]);
-        if (start == NULL)
+        if (name_utf16[0] == 0 && name_utf16[1] == 0)
             continue;
 
-        start = strchr(start, '>');
-        if (start == NULL)
-            continue;
+        {
+            size_t out = 0;
 
-        start++;
+            for (j = 0; j < 42; ++j)
+            {
+                u16 codepoint =
+                    (u16)(((u16)name_utf16[j * 2] << 8) |
+                          name_utf16[j * 2 + 1]);
 
-        snprintf(
-            end_tag,
-            sizeof(end_tag),
-            "</%s",
-            tags[i] + 1
-        );
+                if (codepoint == 0)
+                    break;
 
-        end = strstr(start, end_tag);
-        if (end == NULL || end <= start)
-            continue;
+                if (codepoint >= 0xD800 && codepoint <= 0xDFFF)
+                    break;
 
-        length = (size_t)(end - start);
-        if (length >= title_name_size)
-            length = title_name_size - 1;
+                if (codepoint < 0x80)
+                {
+                    if (out + 1 >= title_name_size)
+                        break;
 
-        memcpy(title_name, start, length);
-        title_name[length] = '\0';
+                    title_name[out++] = (char)codepoint;
+                }
+                else if (codepoint < 0x800)
+                {
+                    if (out + 2 >= title_name_size)
+                        break;
 
-        if (title_name[0] != '\0')
-            return 1;
+                    title_name[out++] =
+                        (char)(0xC0 | (codepoint >> 6));
+                    title_name[out++] =
+                        (char)(0x80 | (codepoint & 0x3F));
+                }
+                else
+                {
+                    if (out + 3 >= title_name_size)
+                        break;
+
+                    title_name[out++] =
+                        (char)(0xE0 | (codepoint >> 12));
+                    title_name[out++] =
+                        (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                    title_name[out++] =
+                        (char)(0x80 | (codepoint & 0x3F));
+                }
+            }
+
+            title_name[out] = '\0';
+
+            if (out != 0)
+                return 1;
+        }
     }
 
     return 0;
