@@ -3962,6 +3962,22 @@ static int nand_load_directory(const char *path)
             entry->type = NAND_ENTRY_DIRECTORY;
             entry->size = child_count;
         }
+        else if (
+            (strcmp(entry->name, "content") == 0 ||
+             strcmp(entry->name, "data") == 0) &&
+            strstr(path, "/title/") == path
+        )
+        {
+            /*
+             * Wii title directories conventionally contain content and
+             * data subdirectories. Some title-owned directories do not
+             * permit a normal ISFS_ReadDir() probe from another title,
+             * so recognise these names explicitly while keeping the
+             * browser strictly read-only.
+             */
+            entry->type = NAND_ENTRY_DIRECTORY;
+            entry->size = 0;
+        }
         else if (nand_is_known_directory(path, entry->name))
         {
             entry->type = NAND_ENTRY_NOACCESS;
