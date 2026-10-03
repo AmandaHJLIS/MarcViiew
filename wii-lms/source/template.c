@@ -428,13 +428,28 @@ static int imported_get_id(const char *filename, char *id)
 
     id_length = (size_t)(dot - (filename + 10));
 
-    if (id_length != 6)
-        return 0;
+    /*
+     * Accept both the documented marcviiew_GAMEID.mrc form and
+     * the bracketed marcviiew_[GAMEID].mrc form used by existing
+     * import files.
+     */
+    if (id_length == 6)
+    {
+        memcpy(id, filename + 10, 6);
+        id[6] = '\0';
+        return 1;
+    }
 
-    memcpy(id, filename + 10, 6);
-    id[6] = '\0';
+    if (id_length == 8 &&
+        filename[10] == '[' &&
+        filename[17] == ']')
+    {
+        memcpy(id, filename + 11, 6);
+        id[6] = '\0';
+        return 1;
+    }
 
-    return 1;
+    return 0;
 }
 
 static int imported_subfield(
