@@ -3880,6 +3880,7 @@ static int nand_get_title_context(
 );
 
 static int nand_identify_title(const char *path);
+static int nand_load_tmd_for_path(const char *path);
 
 static int nand_set_title_uid(const char *path)
 {
