@@ -3996,6 +3996,61 @@ static int nand_load_directory(const char *path)
     return 1;
 }
 
+static int nand_get_title_context(
+    const char *path,
+    char *title_type,
+    size_t title_type_size,
+    char *title_id,
+    size_t title_id_size
+)
+{
+    const char *prefix = "/title/";
+    const char *type_start;
+    const char *type_end;
+    const char *id_start;
+    const char *id_end;
+    size_t type_length;
+    size_t id_length;
+
+    if (path == NULL ||
+        title_type == NULL ||
+        title_id == NULL ||
+        title_type_size == 0 ||
+        title_id_size == 0 ||
+        strncmp(path, prefix, strlen(prefix)) != 0)
+        return 0;
+
+    type_start = path + strlen(prefix);
+    type_end = strchr(type_start, '/');
+
+    if (type_end == NULL)
+        return 0;
+
+    type_length = (size_t)(type_end - type_start);
+
+    if (type_length == 0 || type_length >= title_type_size)
+        return 0;
+
+    memcpy(title_type, type_start, type_length);
+    title_type[type_length] = '\0';
+
+    id_start = type_end + 1;
+    id_end = strchr(id_start, '/');
+
+    if (id_end == NULL)
+        id_end = id_start + strlen(id_start);
+
+    id_length = (size_t)(id_end - id_start);
+
+    if (id_length == 0 || id_length >= title_id_size)
+        return 0;
+
+    memcpy(title_id, id_start, id_length);
+    title_id[id_length] = '\0';
+
+    return 1;
+}
+
 static void nand_format_size(u32 size, char *output, size_t output_size)
 {
     if (size >= 1024 * 1024)
@@ -4123,6 +4178,28 @@ static void show_nand_browser(void)
         nand_current_path
     );
     print_centered(line);
+
+    {
+        char title_type[32];
+        char title_id[32];
+
+        if (nand_get_title_context(
+                nand_current_path,
+                title_type,
+                sizeof(title_type),
+                title_id,
+                sizeof(title_id)))
+        {
+            snprintf(
+                line,
+                sizeof(line),
+                "Title type: %s    Title ID: %s",
+                title_type,
+                title_id
+            );
+            print_centered(line);
+        }
+    }
 
     if (nand_total_entry_count > NAND_MAX_ENTRIES)
     {
@@ -4254,6 +4331,28 @@ static void show_nand_file_info(void)
 
     snprintf(line, sizeof(line), "Path: %s", entry->path);
     print_centered(line);
+
+    {
+        char title_type[32];
+        char title_id[32];
+
+        if (nand_get_title_context(
+                entry->path,
+                title_type,
+                sizeof(title_type),
+                title_id,
+                sizeof(title_id)))
+        {
+            snprintf(
+                line,
+                sizeof(line),
+                "Title type: %s    Title ID: %s",
+                title_type,
+                title_id
+            );
+            print_centered(line);
+        }
+    }
 
     nand_format_size(entry->size, size_text, sizeof(size_text));
 
