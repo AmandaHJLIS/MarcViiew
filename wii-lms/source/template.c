@@ -406,6 +406,7 @@ static int imported_scroll = 0;
 #define NAND_ENTRY_DIRECTORY 1
 #define NAND_ENTRY_FILE 2
 #define NAND_ENTRY_UNKNOWN 3
+#define NAND_ENTRY_NOACCESS 4
 
 typedef struct
 {
@@ -425,6 +426,33 @@ static char nand_current_path[ISFS_MAXPATH] = "/";
 static char nand_status[160] = "";
 
 static fstats nand_file_stats ATTRIBUTE_ALIGN(32);
+
+static int nand_is_known_directory(const char *path, const char *name)
+{
+    static const char *const root_directories[] = {
+        "import",
+        "meta",
+        "shared1",
+        "shared2",
+        "sys",
+        "ticket",
+        "title",
+        "tmp",
+        "wfs"
+    };
+    size_t i;
+
+    if (path == NULL || name == NULL || strcmp(path, "/") != 0)
+        return 0;
+
+    for (i = 0; i < sizeof(root_directories) / sizeof(root_directories[0]); ++i)
+    {
+        if (strcmp(name, root_directories[i]) == 0)
+            return 1;
+    }
+
+    return 0;
+}
 
 static MARC_Record *loaded_marc_record = NULL;
 
@@ -3920,14 +3948,24 @@ static int nand_load_directory(const char *path)
         }
 
         /*
-         * ISFS does not return a type flag from ISFS_ReadDir().
-         * A successful directory read identifies directories; files
-         * are then inspected read-only with ISFS_Open/GetFileStats.
+         * ISFS_ReadDir() does not return a type flag. A successful
+         * directory read identifies directories; files are then
+         * inspected read-only with ISFS_Open/GetFileStats.
+         *
+         * Some system-owned NAND directories can be enumerated at
+         * the root but refuse a normal ReadDir() probe from a Broadway
+         * title. Recognise the standard root directories explicitly
+         * so they are not misleadingly presented as unknown files.
          */
         if (ISFS_ReadDir(entry->path, NULL, &child_count) == ISFS_OK)
         {
             entry->type = NAND_ENTRY_DIRECTORY;
             entry->size = child_count;
+        }
+        else if (nand_is_known_directory(path, entry->name))
+        {
+            entry->type = NAND_ENTRY_NOACCESS;
+            entry->size = 0;
         }
         else
         {
@@ -4142,6 +4180,8 @@ static void show_nand_browser(void)
                 type = 'D';
             else if (entry->type == NAND_ENTRY_FILE)
                 type = 'F';
+            else if (entry->type == NAND_ENTRY_NOACCESS)
+                type = 'D';
             else
                 type = '?';
 
@@ -4157,6 +4197,12 @@ static void show_nand_browser(void)
                     sizeof(size_text),
                     "%u entries",
                     (unsigned int)entry->size
+                );
+            else if (entry->type == NAND_ENTRY_NOACCESS)
+                snprintf(
+                    size_text,
+                    sizeof(size_text),
+                    "no access"
                 );
             else
                 snprintf(
