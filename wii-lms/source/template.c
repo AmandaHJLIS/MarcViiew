@@ -582,6 +582,41 @@ static int imported_id_exists(const char *game_id)
     return 0;
 }
 
+static int imported_persistent_id_exists(const char *game_id)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    if (game_id == NULL || game_id[0] == '\0')
+        return 0;
+
+    dir = opendir("sd:/marcviiew/imported");
+
+    if (dir == NULL)
+        return 0;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        char existing_id[IMPORTED_RECORD_ID_LENGTH];
+        const char *extension = strrchr(entry->d_name, '.');
+
+        if (entry->d_name[0] == '.' ||
+            extension == NULL ||
+            strcmp(extension, ".mrc") != 0)
+            continue;
+
+        if (imported_get_id(entry->d_name, existing_id) &&
+            strcmp(existing_id, game_id) == 0)
+        {
+            closedir(dir);
+            return 1;
+        }
+    }
+
+    closedir(dir);
+    return 0;
+}
+
 static void imported_scan_directory(const char *directory)
 {
     DIR *dir;
@@ -635,9 +670,17 @@ static void imported_scan_directory(const char *directory)
              * is a duplicate. Remove only the incoming duplicate.
              */
             if (imported_id_exists(game_id) ||
+                imported_persistent_id_exists(game_id) ||
                 access(imported_path, F_OK) == 0)
             {
-                unlink(incoming_path);
+                if (unlink(incoming_path) != 0)
+                {
+                    /*
+                     * Keep scanning even if cleanup fails. The
+                     * persistent record remains the authoritative copy.
+                     */
+                }
+
                 continue;
             }
 
