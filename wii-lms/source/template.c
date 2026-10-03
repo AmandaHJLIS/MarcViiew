@@ -425,6 +425,10 @@ static int nand_scroll = 0;
 static int nand_initialized = 0;
 static char nand_current_path[ISFS_MAXPATH] = "/";
 static char nand_status[160] = "";
+static u64 nand_original_titleid = 0;
+static int nand_original_titleid_valid = 0;
+static u64 nand_active_titleid = 0;
+static int nand_active_titleid_valid = 0;
 
 static fstats nand_file_stats ATTRIBUTE_ALIGN(32);
 
@@ -3863,6 +3867,53 @@ static int nand_get_title_context(
 
 static int nand_identify_title(const char *path);
 
+static int nand_set_title_uid(const char *path)
+{
+    char title_type[16];
+    char title_id[16];
+    u64 titleid;
+    s32 result;
+
+    if (!nand_get_title_context(path, title_type, sizeof(title_type), title_id, sizeof(title_id)))
+        return 0;
+
+    if (strlen(title_type) != 8 || strlen(title_id) != 8)
+        return 0;
+
+    titleid = ((u64)strtoul(title_type, NULL, 16) << 32) |
+              (u64)strtoul(title_id, NULL, 16);
+
+    if (!nand_original_titleid_valid)
+    {
+        if (ES_GetTitleID(&nand_original_titleid) < 0)
+            return 0;
+        nand_original_titleid_valid = 1;
+    }
+
+    if (nand_active_titleid_valid && nand_active_titleid == titleid)
+        return 1;
+
+    result = ES_SetUID(titleid);
+    if (result < 0)
+    {
+        snprintf(nand_status, sizeof(nand_status), "ES_SetUID failed (%d).", (int)result);
+        return 0;
+    }
+
+    nand_active_titleid = titleid;
+    nand_active_titleid_valid = 1;
+    return 1;
+}
+
+static void nand_restore_title_uid(void)
+{
+    if (!nand_original_titleid_valid || !nand_active_titleid_valid)
+        return;
+
+    ES_SetUID(nand_original_titleid);
+    nand_active_titleid_valid = 0;
+}
+
 static int nand_load_directory(const char *path)
 {
     u32 entry_count = 0;
@@ -3880,7 +3931,14 @@ static int nand_load_directory(const char *path)
      * ES_Identify changes permissions without launching the title.
      */
     if (strncmp(path, "/title/", 7) == 0)
+    {
         nand_identify_title(path);
+        nand_set_title_uid(path);
+    }
+    else
+    {
+        nand_restore_title_uid();
+    }
 
     result = ISFS_ReadDir(path, NULL, &entry_count);
 
@@ -7788,7 +7846,10 @@ int main(void)
 
 
     if (nand_initialized)
+    {
+        nand_restore_title_uid();
         ISFS_Deinitialize();
+    }
 
     return 0;
 }
