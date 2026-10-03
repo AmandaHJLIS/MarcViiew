@@ -3938,33 +3938,6 @@ static void nand_restore_title_uid(void)
     nand_active_titleid_valid = 0;
 }
 
-/*
- * Refresh the PPCBOOT UID once when the NAND browser starts.
- *
- * ISFS permission checks use the UID associated with the active title.
- * The browser can begin with stale/restricted permission state even though
- * the IOS patches are already active. ES_SetUID() is also what our existing
- * title-exit path uses to restore the original identity, so explicitly
- * refreshing the current title here should make the initial root listing
- * behave the same way without identifying a different title.
- */
-static int nand_refresh_current_title_uid(void)
-{
-    u64 titleid;
-
-    if (ES_GetTitleID(&titleid) < 0)
-        return 0;
-
-    if (ES_SetUID(titleid) < 0)
-        return 0;
-
-    nand_original_titleid = titleid;
-    nand_original_titleid_valid = 1;
-    nand_active_titleid_valid = 0;
-
-    return 1;
-}
-
 static int nand_load_directory(const char *path)
 {
     u32 entry_count = 0;
@@ -8045,21 +8018,6 @@ int main(void)
                         }
                         else
                         {
-                            /*
-                             * Refresh the current title identity before the
-                             * first root-directory probe. This mirrors the
-                             * ES_SetUID() transition that makes the browser
-                             * usable after navigating through /title/.
-                             */
-                            if (!nand_refresh_current_title_uid())
-                            {
-                                snprintf(
-                                    nand_status,
-                                    sizeof(nand_status),
-                                    "Could not refresh current title UID."
-                                );
-                            }
-
                             nand_initialized = 1;
                         }
                     }
