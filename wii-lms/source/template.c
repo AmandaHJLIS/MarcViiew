@@ -4120,7 +4120,7 @@ static int nand_read_title_name(
     int fd;
     s32 bytes_read;
     u8 *tmd_buffer = NULL;
-    u8 banner_buffer[0x80 + 0x600] ATTRIBUTE_ALIGN(32);
+    u8 banner_buffer[0x80 + 0x640] ATTRIBUTE_ALIGN(32);
     u32 content_id = 0;
     u16 content_count;
     u16 content_index;
@@ -4236,7 +4236,7 @@ static int nand_read_title_name(
 
     ISFS_Close(fd);
 
-    if (bytes_read < (s32)(0x80 + 0x600))
+    if (bytes_read < (s32)(0x80 + 0x640))
         return 0;
 
     imet = &banner_buffer[0x80];
@@ -4247,7 +4247,7 @@ static int nand_read_title_name(
         imet[3] != 'T')
         return 0;
 
-    name_table = &imet[0x1C];
+    name_table = &imet[0x5C];
 
     {
         const u32 language_order[10] = {
