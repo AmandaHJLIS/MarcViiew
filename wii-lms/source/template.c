@@ -4247,7 +4247,8 @@ static int nand_read_title_name(
         imet[3] != 'T')
         return 0;
 
-    name_table = &imet[0x5C];
+    /* The IMET name table begins after the 0x1C-byte IMET header. */
+    name_table = &imet[0x1C];
 
     {
         const u32 language_order[10] = {
@@ -4318,6 +4319,26 @@ static int nand_read_title_name(
     }
 
     return 0;
+}
+
+static const char *nand_database_title(const char *title_id)
+{
+    int existing;
+
+    if (title_id == NULL || title_id[0] == '\0')
+        return NULL;
+
+    existing = find_game_by_id(title_id);
+
+    if (existing < 0 || games[existing].title[0] == '\0')
+        return NULL;
+
+    /* A newly discovered NAND title starts with its decoded ID as its
+       placeholder title. Only treat a different title as a database match. */
+    if (strcmp(games[existing].title, title_id) == 0)
+        return NULL;
+
+    return games[existing].title;
 }
 
 static int nand_decode_title_id(
@@ -4536,18 +4557,43 @@ static void show_nand_browser(void)
             }
             print_centered(line);
 
-            if (nand_read_title_name(
+            {
+                const char *database_title =
+                    nand_database_title(title_id);
+
+                if (database_title != NULL)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "Database title: %s",
+                        database_title
+                    );
+                    print_centered(line);
+                }
+                else if (nand_read_title_name(
                     nand_current_path,
                     title_name,
                     sizeof(title_name)))
-            {
-                snprintf(
-                    line,
-                    sizeof(line),
-                    "Title name: %s",
-                    title_name
-                );
-                print_centered(line);
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "Title name: %s",
+                        title_name
+                    );
+                    print_centered(line);
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "Title name: %s",
+                        nand_title_type_name(title_type)
+                    );
+                    print_centered(line);
+                }
             }
         }
     }
