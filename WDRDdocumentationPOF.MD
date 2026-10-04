@@ -31,6 +31,12 @@ Indicators:
      5  Five-character identifier
      6  Six-character identifier
 
+3rd — Identifier length:
+
+     1  Wiiware/Wii Channel identifier
+     2  VC identifier
+
+
 Validation:
 
      $a should contain the identifier represented by the
@@ -39,3 +45,25 @@ Validation:
 Example:
 
      001  14 $a NALE
+
+## 000–099  Control / identification
+
+## 100–199  Descriptive metadata
+
+## 200–299  Wii title metadata
+
+## 300–399  Physical / carrier representation
+
+## 400–499  Digital representation
+
+## 500–599  Content structure
+
+## 600–699  Relationships
+
+## 700–799  Technical metadata
+
+## 800–899  Preservation
+
+## 900–949  Evidence / provenance
+
+## 950–999  Local / research extensions
