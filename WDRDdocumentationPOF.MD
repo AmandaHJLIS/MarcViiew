@@ -1,4 +1,6 @@
-## 001 Title ID
+## 000-099 Control / Identification 
+
+### 001 Title ID
 
 Definition
 The identifier assigned to an installed Wii title.
@@ -28,5 +30,5 @@ $a should contain the identifier represented by the
 corresponding Wii title directory.
 
 Example
-`001  14
-     $a NALE``
+001  14
+     $a NALE
