@@ -43,7 +43,7 @@ Indicators:
 
      1  Wiiware identifier
      2  VC identifier
-     3  Wii Channel 
+     3  Wii Channel identifier
 
 
 Validation:
