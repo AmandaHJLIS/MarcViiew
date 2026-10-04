@@ -1,5 +1,7 @@
 # MarcViiew NAND Research Log
 
+**Last Updated:** 3rd of October 2026
+
 This document preserves the implementation and hardware-testing history that led to the current NAND research model. Failed experiments are retained because they explain what should not be repeated casually.
 
 ## 3. MarcViiew NAND browser
