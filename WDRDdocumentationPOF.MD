@@ -28,5 +28,5 @@ $a should contain the identifier represented by the
 corresponding Wii title directory.
 
 Example
-001  14
-     $a NALE
+`001  14
+     $a NALE``
