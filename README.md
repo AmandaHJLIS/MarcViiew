@@ -40,7 +40,7 @@ For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controll
 
 Wii Digital Resource Description is a metadata framework format for digital Bibliographic Data regarding WiiWare, Virtual console and Wii channels stored on the NAND. 
 
-Wii Digital Resource Description is designed to described WiiWare, Virtual console and Wii channel resources, their technical structure installed representations, and preservation evidence. WDRD is intended to address the Wii-specific technical and preservation information that those general standards (Marc21, RDA, AACR2) do not attempt to model.
+Wii Digital Resource Description is designed to described WiiWare, Virtual console and Wii channel resources, their technical structure installed representations, and preservation evidence. WDRD is intended to address the Wii-specific technical and preservation information that those general standards (MARC 21, RDA, AACR2) do not attempt to model.
 
 Wii Digital Resource Description describes the title selected using Title IDs, title type, region, version, and other stable platform identifiers for identification standards. For technical standards, it uses 
 TMD information, content counts, boot indices, content types, sizes, hashes, and related title metadata. Wii Digital Resource Description also can show where the item selected is stored, using observed NAND paths, title-local content, shared content, WAD representations, and distinctions between logical and physically observed content. 
