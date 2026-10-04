@@ -1,5 +1,7 @@
 # Wii Title System
 
+**Last Updated:** 3rd of October 2026
+
 ## 5. Title identity and ES
 
 A Wii title is identified by a 64-bit title ID.
