@@ -10,6 +10,9 @@ MarcViiew also includes a NAND (read only) navigational tool for viewing data re
 
 The project is designed as an experimental library and information science project for libraries, librarians, library technicians, and LIS students. It explores how established cataloguing standards, controlled vocabularies, metadata practices, and digital-library workflows can be adapted to a Wii homebrew environment.
 
+For additional information, please visit:
+https://amandahjlis.github.io/
+
 > **Branch note:** This README describes the **`main` branch**. The former `imported-records-template` experimental branch has been merged into `main` following hardware testing. Future Wii application source changes can continue to be developed experimentally before being merged.
 
 ## MARC 21
