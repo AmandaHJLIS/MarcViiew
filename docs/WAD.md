@@ -1,5 +1,7 @@
 # WAD Files
 
+**Last Updated:** 3rd of October 2026
+
 ## 15. WAD files as an offline research tool
 
 WADs are particularly useful because they package title-related structures into a form that can be examined on a PC without repeatedly accessing a live Wii NAND.
