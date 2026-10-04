@@ -8,11 +8,11 @@ The identifier assigned to an installed Wii title.
 
 Data type:
 
-Alphanumeric identifier
+`Alphanumeric identifier`
 
 Repeatability:
 
-Not repeatable
+`Not repeatable`
 
 $a  Title identifier:
 
