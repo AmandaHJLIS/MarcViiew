@@ -45,6 +45,8 @@ Wii Digital Resource Description is designed to described WiiWare, Virtual conso
 Wii Digital Resource Description describes the title selected using Title IDs, title type, region, version, and other stable platform identifiers for identification standards. For technical standards, it uses 
 TMD information, content counts, boot indices, content types, sizes, hashes, and related title metadata. Wii Digital Resource Description also can show where the item selected is stored, using observed NAND paths, title-local content, shared content, WAD representations, and distinctions between logical and physically observed content. 
 
+WDRD is still under active development and is not officially endorsed by the Library of Congress for video game cataloguing on the Wii. 
+
 For the WDRD metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
 
 ## ViiewLib Integration
