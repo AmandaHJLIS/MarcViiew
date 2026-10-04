@@ -22,18 +22,6 @@ For authoritative documentation and current field definitions, please refer to t
 
 For MarcViiew's project-specific MARC usage and field definitions, see the [MarcViiew MARC21 Profile](marcviiew-marc-profile.md).
 
-## Wiiext
-
-<img width="289" height="102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
-
-Wiiext is a controlled vocabulary and thesaurus developed specifically for describing Wii video games and related software.
-
-MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records. Wiiext is intended to provide a structured vocabulary for video game cataloguing, with preferred terms and thesaurus relationships designed for use within MarcViiew.
-
-Wiiext is an unofficial extension/profile developed for use with MarcViiew. It is not an official Library of Congress extension, vocabulary, or standard, and is not endorsed or maintained by the Library of Congress.
-
-For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controlled Vocabulary and Thesaurus Profile](marcviiew-wiiext-profile.md).
-
 ## WDRD
 
 <img width="222" height="64" alt="2e827bbe957879504e4aad14f3112ad6" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
@@ -48,6 +36,18 @@ TMD information, content counts, boot indices, content types, sizes, hashes, and
 WDRD is still under active development and is not officially endorsed by the Library of Congress for video game cataloguing on the Wii. 
 
 For the WDRD metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
+
+## Wiiext
+
+<img width="289" height="102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
+
+Wiiext is a controlled vocabulary and thesaurus developed specifically for describing Wii video games and related software.
+
+MarcViiew uses Wiiext terms to provide consistent genre and form classification within its MARC 21 records. Wiiext is intended to provide a structured vocabulary for video game cataloguing, with preferred terms and thesaurus relationships designed for use within MarcViiew.
+
+Wiiext is an unofficial extension/profile developed for use with MarcViiew. It is not an official Library of Congress extension, vocabulary, or standard, and is not endorsed or maintained by the Library of Congress.
+
+For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controlled Vocabulary and Thesaurus Profile](marcviiew-wiiext-profile.md).
 
 ## ViiewLib Integration
 
