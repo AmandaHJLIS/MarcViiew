@@ -1,3 +1,11 @@
+# WDRD Metadata framework Profile
+
+**Status:** Planned  
+
+**Version:** 1.0  
+
+**Last Updated:** 4th of October 2026
+
 ## 000-099 Control / Identification 
 
 ### 001 Title ID
