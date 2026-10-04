@@ -39,7 +39,7 @@ Indicators:
      5  Five-character identifier
      6  Six-character identifier
 
-3rd — Identifier length:
+3rd — Title type:
 
      1  Wiiware/Wii Channel identifier
      2  VC identifier
