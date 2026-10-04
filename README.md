@@ -26,14 +26,14 @@ For MarcViiew's project-specific MARC usage and field definitions, see the [Marc
 
 <img width="222" height="64" alt="2e827bbe957879504e4aad14f3112ad6" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
 
-Wii Digital Resource Description is a metadata framework format for digital Bibliographic Data regarding WiiWare, Virtual console and Wii channels stored on the NAND. 
+Wii Digital Resource Description (WDRD) is a Wii-specific metadata framework for describing WiiWare, Virtual Console, and Wii Channel resources, including their installed representations on the Wii NAND.
 
-Wii Digital Resource Description is designed to described WiiWare, Virtual console and Wii channel resources, their technical structure installed representations, and preservation evidence. WDRD is intended to address the Wii-specific technical and preservation information that those general standards (MARC 21, RDA, AACR2) do not attempt to model.
+WDRD is designed to describe WiiWare, Virtual Console, and Wii Channel resources, their technical structure and installed representations, and associated preservation evidence. WDRD is intended to address the Wii-specific technical and preservation information that those general standards (MARC 21, RDA, AACR2) do not attempt to model.
 
-Wii Digital Resource Description describes the title selected using Title IDs, title type, region, version, and other stable platform identifiers for identification standards. For technical standards, it uses 
-TMD information, content counts, boot indices, content types, sizes, hashes, and related title metadata. Wii Digital Resource Description also can show where the item selected is stored, using observed NAND paths, title-local content, shared content, WAD representations, and distinctions between logical and physically observed content. 
+WDRD describes the selected title using title IDs, title type, region, version, and other stable platform identifiers. For technical metadata, it uses
+TMD information, content counts, boot indices, content types, sizes, hashes, and related title metadata. WDRD can also describe where the selected item is stored, using observed NAND paths, title-local content, shared content, WAD representations, and distinctions between logical and physically observed content. 
 
-WDRD is still under active development and is not officially endorsed by the Library of Congress for video game cataloguing on the Wii. 
+WDRD is still under active development. It is an independent project and is not an official Library of Congress, MARC 21, RDA, AACR2, Nintendo, or industry standard.
 
 For the WDRD metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
 
@@ -102,9 +102,21 @@ GameTDB provides information including game IDs, titles, publishers, developers,
 
 The database is used for **metadata matching**, not as a requirement for every discovered title to be recognised. Wii titles discovered from NAND or storage devices may still appear when no matching database record exists; in those cases MarcViiew retains the discovered title ID and available discovery metadata.
 
+## Temporary IOS Patching
+
+MarcViiew's NAND title-discovery functionality currently relies on a temporary, RAM-only IOS patching technique to obtain the access required for its experimental NAND research.
+
+The patching is applied to the IOS environment in memory while MarcViiew is running. It does **not** permanently modify the Wii NAND or install a modified IOS. Restarting the Wii removes the temporary state.
+
+This functionality should nevertheless be considered **experimental**. IOS is a core part of the Wii software environment, and changes to its runtime behaviour can cause instability or regressions. Users who are uncomfortable with experimental IOS-level behaviour should avoid relying on the NAND-research functionality and can instead use MarcViiew's non-NAND catalogue features.
+
+The temporary patching exists because standard homebrew filesystem access does not necessarily provide sufficient permissions to enumerate or inspect all title-owned NAND directories. MarcViiew's approach is intended for read-only research and discovery; it does not intentionally write to the NAND as part of this process.
+
+The technique is documented in the project's Wii NAND research documentation and may change or be removed as the underlying research develops.
+
 ## Catalogue Discovery
 
-The current branch can discover software through several Wii storage mechanisms.
+The current branch can discover software from several Wii storage and distribution representations.
 
 ### WBFS storage
 
@@ -273,7 +285,12 @@ The following ideas are planned as longer-term research and development areas ra
 * Further refinement of MarcViiew's Wii user interface and reusable UI components
 * Research into UI architecture and interaction patterns used by newer Wii homebrew projects, including **RiftWii**, to inform future MarcViiew UI development
 * Improved screen layout, navigation, text rendering, scrolling, and input handling
-* Proper WDRD documentation, encoding and importing. Including an evergreen LMS fork **or** specialized LMS for viewing `.wdrd` file formats.
+
+### WDRD and Digital Library Research
+
+* Proper WDRD documentation, encoding, validation, and importing
+* A specialised LMS or catalogue application for viewing and managing `.wdrd` files
+* Investigation of integration with existing LMS platforms, including the possibility of an Evergreen-based implementation
 
 ### Wii/WiiWare File Structure Research
 
@@ -353,4 +370,4 @@ Library of Congress — for the MARC 21 bibliographic standards.
 
 ISO/TC 46 — for ISO 2709, Information and documentation — Format for information exchange.
 
-Lilyflower - for extensively testing MarcViiew on VWii, and providing external .mrc files.
+Lilyflower — for extensively testing MarcViiew on vWii and providing external `.mrc` files.
