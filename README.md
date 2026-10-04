@@ -34,11 +34,11 @@ Wiiext is an unofficial extension/profile developed for use with MarcViiew. It i
 
 For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controlled Vocabulary and Thesaurus Profile](marcviiew-wiiext-profile.md).
 
-## Wdrd
+## WDRD
 
 <img width="222" height="64" alt="2e827bbe957879504e4aad14f3112ad6" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
 
-For the metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
+For the WDRD metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
 
 ## ViiewLib Integration
 
