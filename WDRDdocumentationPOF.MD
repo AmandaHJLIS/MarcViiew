@@ -53,7 +53,8 @@ Validation:
 
 Example:
 
-     001  142 $a NALE
+     001  142 
+          $a NALE
 
 ## 000–099  Control / identification
 
