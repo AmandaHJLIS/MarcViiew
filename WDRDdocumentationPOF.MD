@@ -4,15 +4,15 @@
 
 Definition:
 
-The identifier assigned to an installed Wii title.
+     The identifier assigned to an installed Wii title.
 
 Data type:
 
-`Alphanumeric identifier`
+     Alphanumeric identifier
 
 Repeatability:
 
-`Not repeatable`
+     Not repeatable
 
 $a  Title identifier:
 
@@ -33,9 +33,9 @@ Indicators:
 
 Validation:
 
-$a should contain the identifier represented by the
-corresponding Wii title directory.
+     $a should contain the identifier represented by the
+     corresponding Wii title directory.
 
 Example:
 
-`001  14 $a NALE`
+     001  14 $a NALE
