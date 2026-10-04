@@ -1,5 +1,7 @@
 # Wii NAND
 
+**Last Updated:** 3rd of October 2026
+
 ## 2. Wii NAND filesystem overview
 
 The Wii contains a 512 MiB NAND flash device used for system software, installed channels, WiiWare, Virtual Console software, saves, and system configuration.
