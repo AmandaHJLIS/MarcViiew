@@ -114,7 +114,7 @@ The temporary patching exists because standard homebrew filesystem access does n
 
 The current approach is documented in the project's Wii NAND research documentation and may change or be removed as the underlying research develops.
 
-For the current approach with temporary IOS patching, see the [NAND](docs/NAND.md).
+For the current approach with temporary IOS patching, see the [NAND Research Documentation](docs/NAND.md).
 
 ## Catalogue Discovery
 
