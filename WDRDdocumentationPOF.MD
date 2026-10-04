@@ -2,7 +2,7 @@
 
 **Status:** Planned  
 
-**Version:** 1.0  
+**Version:** Draft 0.1 
 
 **Last Updated:** 4th of October 2026
 
