@@ -112,7 +112,7 @@ This functionality should nevertheless be considered **experimental**. IOS is a 
 
 The temporary patching exists because standard homebrew filesystem access does not necessarily provide sufficient permissions to enumerate or inspect all title-owned NAND directories. MarcViiew's approach is intended for read-only research and discovery; it does not intentionally write to the NAND as part of this process.
 
-The technique is documented in the project's Wii NAND research documentation and may change or be removed as the underlying research develops.
+The current approach is documented in the project's Wii NAND research documentation and may change or be removed as the underlying research develops.
 
 ## Catalogue Discovery
 
