@@ -1,5 +1,7 @@
 # TMD — Title Metadata
 
+**Last Updated:** 3rd of October 2026
+
 ## 6. TMD (Title Metadata)
 
 The TMD is one of the most useful structures discovered during MarcViiew's NAND research.
