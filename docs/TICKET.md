@@ -1,5 +1,7 @@
 # Ticket
 
+**Last Updated:** 3rd of October 2026
+
 A ticket is part of the Wii title-management/security metadata associated with an installed or packaged title.
 
 ## Role
