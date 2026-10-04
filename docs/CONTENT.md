@@ -1,5 +1,7 @@
 # Wii Content
 
+**Last Updated:** 3rd of October 2026
+
 ## 9. Normal content versus physical storage
 
 A TMD record should not automatically be translated into:
