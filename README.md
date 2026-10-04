@@ -34,6 +34,12 @@ Wiiext is an unofficial extension/profile developed for use with MarcViiew. It i
 
 For the controlled vocabulary and thesaurus profile, see the [MarcViiew Controlled Vocabulary and Thesaurus Profile](marcviiew-wiiext-profile.md).
 
+## Wdrd
+
+<img width="222" height="64" alt="2e827bbe957879504e4aad14f3112ad6" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
+
+For the metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
+
 ## ViiewLib Integration
 
 <img width="305" height="66" alt="ViiewLib" src="https://github.com/user-attachments/assets/2d3b7b36-bab9-48c5-ae43-f910357ccc1f" />
@@ -258,6 +264,7 @@ The following ideas are planned as longer-term research and development areas ra
 * Further refinement of MarcViiew's Wii user interface and reusable UI components
 * Research into UI architecture and interaction patterns used by newer Wii homebrew projects, including **RiftWii**, to inform future MarcViiew UI development
 * Improved screen layout, navigation, text rendering, scrolling, and input handling
+* Proper WDRD documentation, encoding and importing. Including an evergreen LMS fork **or** specialized LMS for viewing `.wdrd` file formats.
 
 ### Wii/WiiWare File Structure Research
 
