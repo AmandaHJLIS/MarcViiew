@@ -462,9 +462,6 @@ static u32 nand_total_entry_count = 0;
 static int nand_selection = 0;
 static int nand_scroll = 0;
 static int nand_tmd_scroll = 0;
-#define NAND_TMD_MAX_LINES 128
-static char nand_tmd_lines[NAND_TMD_MAX_LINES][160];
-static u32 nand_tmd_line_count = 0;
 static int nand_initialized = 0;
 static u64 nand_identified_titleid = 0;
 static int nand_identified_titleid_valid = 0;
@@ -500,6 +497,7 @@ static int nand_is_known_directory(const char *path, const char *name)
         if (strcmp(name, root_directories[i]) == 0)
             return 1;
     }
+
     return 0;
 }
 
@@ -999,7 +997,8 @@ void copy_database_value(
 
     if (
         strncmp(
-            line,            field,
+            line,
+            field,
             field_length
         ) == 0
     ) {
@@ -1498,7 +1497,8 @@ static void scan_digital_titles(const char *root_path, const char *source)
 static void scan_nand_catalogue(void)
 {
 
-    u32 title_count = 0;    u64 *titles = NULL;
+    u32 title_count = 0;
+    u64 *titles = NULL;
     s32 result;
     u32 i;
 
@@ -1997,6 +1997,7 @@ void show_game_information() {
         "Region",
         game->region
     );
+
     add_info_field(
         info_lines,
         &line_count,
@@ -2496,7 +2497,8 @@ static int imported_load_metadata(
 
     if (file == NULL)
     {
-        snprintf(            path,
+        snprintf(
+            path,
             sizeof(path),
             "sd:/marcviiew_import/%s",
             imported->filename
@@ -2995,7 +2997,8 @@ void show_marc_menu() {
     )
         marc_selection = game_count - 1;
 
-    if (        marc_menu_scroll < 0
+    if (
+        marc_menu_scroll < 0
     )
         marc_menu_scroll = 0;
 
@@ -3494,6 +3497,7 @@ void show_imported_record(void)
                 marc_lines[i]
             );
         }
+
         printf("\n");
 
         if (max_scroll > 0)
@@ -3993,7 +3997,8 @@ static int nand_initialize_viewer(void)
 
     if (!nand_load_directory(nand_current_path))
     {
-        snprintf(            nand_status,
+        snprintf(
+            nand_status,
             sizeof(nand_status),
             "Could not read NAND root directory."
         );
@@ -4492,7 +4497,8 @@ static const char *nand_title_type_name(const char *title_type)
 }
 
 static u16 nand_read_be16(const u8 *data)
-{    return (u16)(((u16)data[0] << 8) | data[1]);
+{
+    return (u16)(((u16)data[0] << 8) | data[1]);
 }
 
 static u32 nand_read_be32(const u8 *data)
@@ -4992,6 +4998,7 @@ static int nand_read_title_name(
                 {
                     if (out + 2 >= title_name_size)
                         break;
+
                     title_name[out++] =
                         (char)(0xC0 | (codepoint >> 6));
                     title_name[out++] =
@@ -5490,7 +5497,8 @@ static void show_nand_shared_map(void)
     {
         print_centered("No shared content records found.");
     }
-    else    {
+    else
+    {
         if (nand_shared_map_scroll < 0)
             nand_shared_map_scroll = 0;
 
@@ -5768,8 +5776,6 @@ static void show_nand_file_info(void)
     NandEntry *entry;
     char line[160];
     char size_text[32];
-    u32 i;
-    const u32 visible_lines = 18;
 
     if (nand_entry_count == 0 ||
         nand_selection < 0 ||
@@ -5783,355 +5789,284 @@ static void show_nand_file_info(void)
 
     if (strcmp(entry->name, "title.tmd") == 0)
     {
+        u32 first;
+        u32 last;
+        u32 i;
+
         print_centered("NAND TMD Information");
         print_ui_line('=');
+        printf("\n");
 
-        /*
-         * Build the complete TMD page in a persistent line buffer.
-         * UP/DOWN now scroll the entire page, including the title/path
-         * information above the content records.
-         */
-        nand_tmd_line_count = 0;
+        snprintf(line, sizeof(line), "Name: %s", entry->name);
+        print_centered(line);
 
-        snprintf(
-            nand_tmd_lines[nand_tmd_line_count++],
-            sizeof(nand_tmd_lines[0]),
-            "Name: %s",
-            entry->name
-        );
-
-        snprintf(
-            nand_tmd_lines[nand_tmd_line_count++],
-            sizeof(nand_tmd_lines[0]),
-            "Path: %s",
-            entry->path
-        );
+        snprintf(line, sizeof(line), "Path: %s", entry->path);
+        print_centered(line);
 
         nand_format_size(entry->size, size_text, sizeof(size_text));
-
-        snprintf(
-            nand_tmd_lines[nand_tmd_line_count++],
-            sizeof(nand_tmd_lines[0]),
-            "File size: %s",
-            size_text
-        );
+        snprintf(line, sizeof(line), "File size: %s", size_text);
+        print_centered(line);
 
         if (!nand_load_tmd_for_path(entry->path))
         {
-            nand_tmd_lines[nand_tmd_line_count][0] = '\0';
-            ++nand_tmd_line_count;
+            printf("\n");
+            print_centered("Could not parse TMD content records.");
+            printf("\n");
+            print_centered("Read-only inspection");
+            printf("\n");
+            print_centered("B = Back    PLUS = Main Menu");
+            return;
+        }
 
-            snprintf(
-                nand_tmd_lines[nand_tmd_line_count++],
-                sizeof(nand_tmd_lines[0]),
-                "Could not parse TMD content records."
-            );
+        /*
+         * Read /shared1/content.map and compare each TMD content SHA-1
+         * against the map's SHA-1 values. This is strictly observational:
+         * no NAND files are modified.
+         *
+         * "NO MATCH" is only reported after content.map was parsed
+         * successfully. A read/parse failure is reported as unavailable.
+         */
+        nand_load_shared_content_map();
+
+        printf("\n");
+        print_centered("TMD Content Records");
+        print_centered("ID Index Type Size SHA-1 / content.map");
+
+        if (nand_tmd_content_count == 0)
+        {
+            print_centered("No content records found.");
         }
         else
         {
-            nand_load_shared_content_map();
-
-            nand_tmd_lines[nand_tmd_line_count][0] = '\0';
-            ++nand_tmd_line_count;
-
-            snprintf(
-                nand_tmd_lines[nand_tmd_line_count++],
-                sizeof(nand_tmd_lines[0]),
-                "TMD Content Records"
-            );
-
-            snprintf(
-                nand_tmd_lines[nand_tmd_line_count++],
-                sizeof(nand_tmd_lines[0]),
-                "ID Index Type Size SHA-1 / content.map"
-            );
-
-            if (nand_tmd_content_count == 0)
-            {
-                snprintf(
-                    nand_tmd_lines[nand_tmd_line_count++],
-                    sizeof(nand_tmd_lines[0]),
-                    "No content records found."
-                );
-            }
-            else
-            {
-                for (i = 0;
-                     i < nand_tmd_content_count &&
-                     nand_tmd_line_count + 3 < NAND_TMD_MAX_LINES;
-                     ++i)
-                {
-                    const NandContentInfo *content_info =
-                        &nand_tmd_contents[i];
-                    const NandSharedContentInfo *shared_info;
-                    char hash_text[32];
-                    char map_text[32];
-                    char location_text[ISFS_MAXPATH];
-                    char title_path[ISFS_MAXPATH];
-                    int location_found;
-
-                    location_text[0] = '\0';
-                    title_path[0] = '\0';
-
-                    nand_get_current_title_path(
-                        entry->path,
-                        title_path,
-                        sizeof(title_path)
-                    );
-
-                    location_found =
-                        nand_resolve_content_location(
-                            title_path,
-                            content_info,
-                            location_text,
-                            sizeof(location_text)
-                        );
-
-                    snprintf(
-                        hash_text,
-                        sizeof(hash_text),
-                        "%02x%02x%02x%02x...%02x%02x",
-                        content_info->hash[0],
-                        content_info->hash[1],
-                        content_info->hash[2],
-                        content_info->hash[3],
-                        content_info->hash[18],
-                        content_info->hash[19]
-                    );
-
-                    if (content_info->type != 0x8001)
-                    {
-                        snprintf(
-                            map_text,
-                            sizeof(map_text),
-                            "MAP:NOT SHARED"
-                        );
-                    }
-                    else if (nand_shared_map_loaded)
-                    {
-                        shared_info =
-                            nand_find_shared_content_by_hash(
-                                content_info->hash
-                            );
-
-                        if (shared_info != NULL)
-                        {
-                            snprintf(
-                                map_text,
-                                sizeof(map_text),
-                                "MAP:%s",
-                                shared_info->filename
-                            );
-                        }
-                        else
-                        {
-                            snprintf(
-                                map_text,
-                                sizeof(map_text),
-                                "MAP:NO MATCH"
-                            );
-                        }
-                    }
-                    else
-                    {
-                        snprintf(
-                            map_text,
-                            sizeof(map_text),
-                            "MAP:UNAVAILABLE"
-                        );
-                    }
-
-                    if ((content_info->size >> 32) == 0)
-                    {
-                        snprintf(
-                            line,
-                            sizeof(line),
-                            "%08x  %u  %x  %u",
-                            (unsigned int)content_info->content_id,
-                            (unsigned int)content_info->index,
-                            (unsigned int)content_info->type,
-                            (unsigned int)content_info->size
-                        );
-                    }
-                    else
-                    {
-                        snprintf(
-                            line,
-                            sizeof(line),
-                            "%08x  %u  %x  %08x:%08x",
-                            (unsigned int)content_info->content_id,
-                            (unsigned int)content_info->index,
-                            (unsigned int)content_info->type,
-                            (unsigned int)(content_info->size >> 32),
-                            (unsigned int)(content_info->size & 0xFFFFFFFF)
-                        );
-                    }
-
-                    snprintf(
-                        nand_tmd_lines[nand_tmd_line_count++],
-                        sizeof(nand_tmd_lines[0]),
-                        "%s",
-                        line
-                    );
-
-                    snprintf(
-                        nand_tmd_lines[nand_tmd_line_count++],
-                        sizeof(nand_tmd_lines[0]),
-                        "SHA-1 %s  %s",
-                        hash_text,
-                        map_text
-                    );
-
-                    if (location_found)
-                    {
-                        snprintf(
-                            line,
-                            sizeof(line),
-                            "PATH: %s",
-                            location_text
-                        );
-                    }
-                    else if (content_info->type == 0x0001 ||
-                             content_info->type == 0x8001)
-                    {
-                        snprintf(
-                            line,
-                            sizeof(line),
-                            "PATH: NOT FOUND"
-                        );
-                    }
-                    else
-                    {
-                        snprintf(
-                            line,
-                            sizeof(line),
-                            "PATH: NOT APPLICABLE"
-                        );
-                    }
-
-                    snprintf(
-                        nand_tmd_lines[nand_tmd_line_count++],
-                        sizeof(nand_tmd_lines[0]),
-                        "%s",
-                        line
-                    );
-                }
-
-                nand_tmd_lines[nand_tmd_line_count][0] = '\0';
-                ++nand_tmd_line_count;
-
-                snprintf(
-                    nand_tmd_lines[nand_tmd_line_count++],
-                    sizeof(nand_tmd_lines[0]),
-                    "Records: %u",
-                    (unsigned int)nand_tmd_content_count
-                );
-
-                if (nand_shared_map_loaded)
-                {
-                    u32 shared_record_count = 0;
-                    u32 shared_match_count = 0;
-                    u32 record_index;
-
-                    for (record_index = 0;
-                         record_index < nand_tmd_content_count;
-                         ++record_index)
-                    {
-                        const NandContentInfo *record =
-                            &nand_tmd_contents[record_index];
-
-                        if (record->type == 0x8001)
-                        {
-                            const NandSharedContentInfo *shared_info =
-                                nand_find_shared_content_by_hash(
-                                    record->hash
-                                );
-
-                            ++shared_record_count;
-
-                            if (shared_info != NULL)
-                                ++shared_match_count;
-                        }
-                    }
-
-                    if (shared_record_count == 0)
-                    {
-                        snprintf(
-                            nand_tmd_lines[nand_tmd_line_count++],
-                            sizeof(nand_tmd_lines[0]),
-                            "MAP = loaded; this title has no shared TMD contents"
-                        );
-                    }
-                    else
-                    {
-                        snprintf(
-                            nand_tmd_lines[nand_tmd_line_count++],
-                            sizeof(nand_tmd_lines[0]),
-                            "MAP = %u/%u shared TMD contents matched by SHA-1",
-                            (unsigned int)shared_match_count,
-                            (unsigned int)shared_record_count
-                        );
-                    }
-                }
-                else if (nand_shared_status[0] != '\0')
-                {
-                    snprintf(
-                        nand_tmd_lines[nand_tmd_line_count++],
-                        sizeof(nand_tmd_lines[0]),
-                        "%s",
-                        nand_shared_status
-                    );
-                }
-            }
-        }
-
-        if (nand_tmd_line_count > visible_lines)
-        {
-            u32 max_scroll =
-                nand_tmd_line_count - visible_lines;
-
             if (nand_tmd_scroll < 0)
                 nand_tmd_scroll = 0;
 
-            if ((u32)nand_tmd_scroll > max_scroll)
-                nand_tmd_scroll = (int)max_scroll;
-        }
-        else
-        {
-            nand_tmd_scroll = 0;
-        }
+            if ((u32)nand_tmd_scroll >= nand_tmd_content_count)
+                nand_tmd_scroll = (int)nand_tmd_content_count - 1;
 
-        printf("\n");
+            first = (u32)nand_tmd_scroll;
+            last = first + 8;
 
-        for (i = (u32)nand_tmd_scroll;
-             i < (u32)nand_tmd_scroll + visible_lines &&
-             i < nand_tmd_line_count;
-             ++i)
-        {
-            print_centered(nand_tmd_lines[i]);
-        }
+            if (last > nand_tmd_content_count)
+                last = nand_tmd_content_count;
 
-        printf("\n");
+            for (i = first; i < last; ++i)
+            {
+                const NandContentInfo *content_info =
+                    &nand_tmd_contents[i];
+                const NandSharedContentInfo *shared_info;
+                char hash_text[32];
+                char map_text[32];
+                char location_text[ISFS_MAXPATH];
+                char title_path[ISFS_MAXPATH];
+                int location_found;
 
-        if (nand_tmd_line_count > visible_lines)
-        {
+                location_text[0] = '\\0';
+                title_path[0] = '\\0';
+                nand_get_current_title_path(
+                    entry->path,
+                    title_path,
+                    sizeof(title_path)
+                );
+                location_found = nand_resolve_content_location(
+                    title_path,
+                    content_info,
+                    location_text,
+                    sizeof(location_text)
+                );
+
+                snprintf(
+                    hash_text,
+                    sizeof(hash_text),
+                    "%02x%02x%02x%02x...%02x%02x",
+                    content_info->hash[0],
+                    content_info->hash[1],
+                    content_info->hash[2],
+                    content_info->hash[3],
+                    content_info->hash[18],
+                    content_info->hash[19]
+                );
+
+                /*
+                 * /shared1/content.map only indexes shared TMD
+                 * contents (type bit 0x8000). Ordinary title
+                 * contents have their own <content id>.app file and
+                 * should not be reported as missing from the map.
+                 */
+                if (content_info->type != 0x8001)
+                {
+                    snprintf(
+                        map_text,
+                        sizeof(map_text),
+                        "MAP:NOT SHARED"
+                    );
+                }
+                else if (nand_shared_map_loaded)
+                {
+                    shared_info =
+                        nand_find_shared_content_by_hash(
+                            content_info->hash
+                        );
+
+                    if (shared_info != NULL)
+                    {
+                        snprintf(
+                            map_text,
+                            sizeof(map_text),
+                            "MAP:%s",
+                            shared_info->filename
+                        );
+                    }
+                    else
+                    {
+                        snprintf(
+                            map_text,
+                            sizeof(map_text),
+                            "MAP:NO MATCH"
+                        );
+                    }
+                }
+                else
+                {
+                    snprintf(
+                        map_text,
+                        sizeof(map_text),
+                        "MAP:UNAVAILABLE"
+                    );
+                }
+
+                if ((content_info->size >> 32) == 0)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "%08x  %u  %x  %u",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)content_info->size
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "%08x  %u  %x  %08x:%08x",
+                        (unsigned int)content_info->content_id,
+                        (unsigned int)content_info->index,
+                        (unsigned int)content_info->type,
+                        (unsigned int)(content_info->size >> 32),
+                        (unsigned int)(content_info->size & 0xFFFFFFFF)
+                    );
+                }
+
+                print_centered(line);
+
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "SHA-1 %s  %s",
+                    hash_text,
+                    map_text
+                );
+                print_centered(line);
+
+                if (location_found)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: %s",
+                        location_text
+                    );
+                }
+                else if (content_info->type == 0x0001)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT FOUND"
+                    );
+                }
+                else if (content_info->type == 0x8001)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT FOUND"
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT APPLICABLE"
+                    );
+                }
+                print_centered(line);
+            }
+
+            printf("\n");
+
             snprintf(
                 line,
                 sizeof(line),
-                "Lines %u-%u of %u",
-                (unsigned int)nand_tmd_scroll + 1,
-                (unsigned int)(
-                    nand_tmd_scroll + visible_lines >
-                    nand_tmd_line_count
-                        ? nand_tmd_line_count
-                        : nand_tmd_scroll + visible_lines
-                ),
-                (unsigned int)nand_tmd_line_count
+                "Records %u-%u of %u",
+                first + 1,
+                last,
+                (unsigned int)nand_tmd_content_count
             );
             print_centered(line);
-        }
 
-        print_centered("UP / DOWN = Scroll");
+            if (nand_shared_map_loaded)
+            {
+                u32 shared_record_count = 0;
+                u32 shared_match_count = 0;
+                u32 record_index;
+
+                for (record_index = 0;
+                     record_index < nand_tmd_content_count;
+                     ++record_index)
+                {
+                    const NandContentInfo *record =
+                        &nand_tmd_contents[record_index];
+
+                    if (record->type == 0x8001)
+                    {
+                        const NandSharedContentInfo *shared_info =
+                            nand_find_shared_content_by_hash(record->hash);
+
+                        shared_record_count++;
+
+                        if (shared_info != NULL)
+                            shared_match_count++;
+                    }
+                }
+
+                if (shared_record_count == 0)
+                {
+                    print_centered(
+                        "MAP = loaded; this title has no shared TMD contents"
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "MAP = %u/%u shared TMD contents matched by SHA-1",
+                        (unsigned int)shared_match_count,
+                        (unsigned int)shared_record_count
+                    );
+                    print_centered(line);
+                }
+            }
+            else if (nand_shared_status[0] != '\0')
+                print_centered(nand_shared_status);
+        }        printf("\n");
+        print_centered("UP / DOWN = Scroll records");
         print_centered("B = Back    PLUS = Main Menu");
         return;
     }
@@ -6255,6 +6190,11 @@ static void show_nand_file_info(void)
             );
             print_centered(line);
 
+            /*
+             * Keep the 64-bit TMD size out of the console printf path.
+             * The raw file size is already displayed above, while the
+             * TMD size is retained internally for later comparison.
+             */
             snprintf(
                 line,
                 sizeof(line),
@@ -6279,6 +6219,7 @@ static void show_nand_file_info(void)
     printf("\n");
     print_centered("B = Back    PLUS = Main Menu");
 }
+
 void show_main_menu() {
 
     printf(
@@ -6556,6 +6497,7 @@ void show_search_results() {
 
         return;
     }
+
 
     for (
         int i = 0;
@@ -7056,6 +6998,7 @@ void show_search_keyboard() {
             "Query: %s_",
             search_query
         );
+
         print_centered(
             query_line
         );
@@ -7554,6 +7497,7 @@ void handle_search_keyboard(
 
 
 void start_search() {
+
     search_mode_selection =
         search_mode;
 
@@ -8055,6 +7999,7 @@ int main(void)
                 show_main_menu();
             }
 
+
             VIDEO_WaitVSync();
 
             continue;
@@ -8168,7 +8113,9 @@ int main(void)
         {
             if (input & INPUT_UP)
             {
-                if (nand_tmd_scroll > 0)
+                if (nand_entries[nand_selection].name[0] != '\0' &&
+                    strcmp(nand_entries[nand_selection].name, "title.tmd") == 0 &&
+                    nand_tmd_scroll > 0)
                 {
                     nand_tmd_scroll--;
                     show_nand_file_info();
@@ -8177,8 +8124,13 @@ int main(void)
 
             if (input & INPUT_DOWN)
             {
-                nand_tmd_scroll++;
-                show_nand_file_info();
+                if (nand_entries[nand_selection].name[0] != '\0' &&
+                    strcmp(nand_entries[nand_selection].name, "title.tmd") == 0 &&
+                    nand_tmd_scroll + 8 < (int)nand_tmd_content_count)
+                {
+                    nand_tmd_scroll++;
+                    show_nand_file_info();
+                }
             }
 
             if (input & INPUT_BACK)
@@ -8546,6 +8498,7 @@ int main(void)
                 ) {
 
                     screen = 1;
+
                     show_main_menu();
                 }
             }
@@ -9044,7 +8997,8 @@ int main(void)
                     marc_selection++;
 
                     if (
-                        marc_selection >=                        marc_menu_scroll +
+                        marc_selection >=
+                        marc_menu_scroll +
                         GAME_LIST_VISIBLE_ITEMS
                     )
                         marc_menu_scroll++;
