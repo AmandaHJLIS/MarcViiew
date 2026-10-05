@@ -175,3 +175,20 @@ The desired result is a table that answers:
     TMD record -> type -> SHA-1 -> physical .app path
 
 This should remain read-only and should not require a recursive NAND preload.
+
+## 28. Additional downloadable-title hardware observations
+
+### Internet Channel
+
+- 4 TMD SHA-1 values matched entries in /shared1/content.map.
+- This provides another positive shared-content hardware result outside the previously tested VC examples.
+- The observation supports SHA-1-based shared-content resolution through content.map.
+- It does not by itself establish the total TMD record count or every physical `.app` location for the title.
+
+### Wii no Ma
+
+- Current TMD inspection produced a DSI exception.
+- Cause remains unresolved.
+- The exception must not be treated as evidence about Wii no Ma's content layout until the failure point is understood.
+
+These observations are intentionally separated from format claims: they are results from the current MarcViiew hardware test implementation.
