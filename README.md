@@ -1,6 +1,6 @@
 # MarcViiew
 
-<img width="370" height="67" alt="MarcViiew logo" src="https://github.com/user-attachments/assets/a0dd8b27-50b7-4e6c-b303-47b6bf3110f0" />
+<img width="249" height="233" alt="MarcViiewExperimental" src="https://github.com/user-attachments/assets/8a00d282-8c43-45c1-a35a-62942503e5f0" />
 
 MarcViiew is a free and open-source library management system (LMS) for the Nintendo Wii, designed for cataloguing, identifying, and viewing video game records.
 
