@@ -463,6 +463,8 @@ static int nand_selection = 0;
 static int nand_scroll = 0;
 static int nand_tmd_scroll = 0;
 static int nand_initialized = 0;
+static u64 nand_identified_titleid = 0;
+static int nand_identified_titleid_valid = 0;
 static char nand_current_path[ISFS_MAXPATH] = "/";
 static char nand_status[160] = "";
 static u64 nand_original_titleid = 0;
@@ -4058,11 +4060,13 @@ static int nand_set_title_uid(const char *path)
 
 static void nand_restore_title_uid(void)
 {
-    if (!nand_original_titleid_valid || !nand_active_titleid_valid)
-        return;
+    if (nand_original_titleid_valid && nand_active_titleid_valid)
+    {
+        ES_SetUID(nand_original_titleid);
+        nand_active_titleid_valid = 0;
+    }
 
-    ES_SetUID(nand_original_titleid);
-    nand_active_titleid_valid = 0;
+    nand_identified_titleid_valid = 0;
 }
 
 static void nand_invalidate_directory_cache(void)
@@ -4353,6 +4357,10 @@ static int nand_identify_title(const char *path)
     titleid = ((u64)strtoul(title_type, NULL, 16) << 32) |
               (u64)strtoul(title_id, NULL, 16);
 
+    if (nand_identified_titleid_valid &&
+        nand_identified_titleid == titleid)
+        return 1;
+
     if (ES_GetStoredTMDSize(titleid, &tmd_size) < 0 ||
         tmd_size == 0 ||
         tmd_size > MAX_SIGNED_TMD_SIZE)
@@ -4446,6 +4454,9 @@ static int nand_identify_title(const char *path)
         );
         return 0;
     }
+
+    nand_identified_titleid = titleid;
+    nand_identified_titleid_valid = 1;
 
     snprintf(
         nand_status,
