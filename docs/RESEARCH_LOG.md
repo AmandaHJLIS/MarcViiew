@@ -192,3 +192,42 @@ This should remain read-only and should not require a recursive NAND preload.
 - The exception must not be treated as evidence about Wii no Ma's content layout until the failure point is understood.
 
 These observations are intentionally separated from format claims: they are results from the current MarcViiew hardware test implementation.
+
+## 29. Muscle March mixed-content hardware test
+
+Muscle March provided another positive hardware test of TMD-to-physical-content resolution.
+
+Six .app files were observed in the title-local content/ directory:
+
+    index 0 -> 00000009.app
+    index 1 -> 00000001.app
+    index 2 -> 00000002.app
+    index 3 -> 00000003.app
+    index 4 -> 0000000a.app
+    index 8 -> 00000008.app
+
+The title also exposed SHARED (0x8001) TMD records. One tested record resolved as:
+
+    content ID 00000005
+    index 5
+    type 8001
+    size 2156800 bytes
+    SHA-1 3644384b...da27
+    content.map identifier 0000002f
+    physical path /shared1/0000002f.app
+
+Another shared record was observed as:
+
+    content ID 00000006
+    index 6
+    type 8001
+    size 370880 bytes
+
+The second record's complete SHA-1/content.map resolution was not recorded.
+
+This independently extends the hardware evidence for the current model:
+
+    TMD type 0001 -> title-local .app
+    TMD type 8001 -> SHA-1 -> content.map -> /shared1/*.app
+
+The test also shows that TMD content index and content ID are distinct fields: for example, index 0 corresponds to content ID 00000009, while index 8 corresponds to content ID 00000008.
