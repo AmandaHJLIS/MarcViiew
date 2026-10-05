@@ -5621,13 +5621,11 @@ static void show_nand_file_info(void)
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x %u %x %u %s %s",
+                        "%08x  %u  %x  %u",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
                         (unsigned int)content_info->type,
-                        (unsigned int)content_info->size,
-                        hash_text,
-                        map_text
+                        (unsigned int)content_info->size
                     );
                 }
                 else
@@ -5635,17 +5633,24 @@ static void show_nand_file_info(void)
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x %u %x %08x:%08x %s %s",
+                        "%08x  %u  %x  %08x:%08x",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
                         (unsigned int)content_info->type,
                         (unsigned int)(content_info->size >> 32),
-                        (unsigned int)(content_info->size & 0xFFFFFFFF),
-                        hash_text,
-                        map_text
+                        (unsigned int)(content_info->size & 0xFFFFFFFF)
                     );
                 }
 
+                print_centered(line);
+
+                snprintf(
+                    line,
+                    sizeof(line),
+                    "SHA-1 %s  %s",
+                    hash_text,
+                    map_text
+                );
                 print_centered(line);
             }
 
