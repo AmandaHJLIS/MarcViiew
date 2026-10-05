@@ -449,6 +449,11 @@ typedef struct
 } NandContentInfo;
 
 static NandEntry nand_entries[NAND_MAX_ENTRIES];
+static NandEntry nand_directory_cache[NAND_MAX_ENTRIES];
+static u32 nand_directory_cache_count = 0;
+static u32 nand_directory_cache_total = 0;
+static char nand_directory_cache_path[ISFS_MAXPATH] = "";
+static int nand_directory_cache_valid = 0;
 static NandContentInfo nand_tmd_contents[NAND_MAX_TMD_CONTENTS];
 static u32 nand_tmd_content_count = 0;
 static int nand_tmd_loaded = 0;
@@ -3896,6 +3901,7 @@ static int nand_load_shared_content_map(void);
 static int nand_export_shared1_inventory(void);
 static int nand_initialize_viewer(void);
 static int nand_load_directory(const char *path);
+static void nand_invalidate_directory_cache(void);
 
 static int nand_get_title_context(
     const char *path,
@@ -4059,6 +4065,14 @@ static void nand_restore_title_uid(void)
     nand_active_titleid_valid = 0;
 }
 
+static void nand_invalidate_directory_cache(void)
+{
+    nand_directory_cache_valid = 0;
+    nand_directory_cache_count = 0;
+    nand_directory_cache_total = 0;
+    nand_directory_cache_path[0] = '\0';
+}
+
 static int nand_load_directory(const char *path)
 {
     u32 entry_count = 0;
@@ -4070,6 +4084,20 @@ static int nand_load_directory(const char *path)
     if (path == NULL || path[0] == '\0')
         return 0;
 
+    if (nand_directory_cache_valid &&
+        strcmp(nand_directory_cache_path, path) == 0)
+    {
+        memcpy(
+            nand_entries,
+            nand_directory_cache,
+            sizeof(NandEntry) * nand_directory_cache_count
+        );
+        nand_entry_count = nand_directory_cache_count;
+        nand_total_entry_count = nand_directory_cache_total;
+        nand_selection = 0;
+        nand_scroll = 0;
+        return 1;
+    }
     /*
      * ISFS permissions are tied to the current IOS title identity. For a
      * title directory, establish that identity before probing content/data.
@@ -4222,6 +4250,21 @@ static int nand_load_directory(const char *path)
     }
 
     free(name_buffer);
+
+    nand_directory_cache_count = nand_entry_count;
+    nand_directory_cache_total = nand_total_entry_count;
+    memcpy(
+        nand_directory_cache,
+        nand_entries,
+        sizeof(NandEntry) * nand_directory_cache_count
+    );
+    snprintf(
+        nand_directory_cache_path,
+        sizeof(nand_directory_cache_path),
+        "%s",
+        path
+    );
+    nand_directory_cache_valid = 1;
 
     return 1;
 }
