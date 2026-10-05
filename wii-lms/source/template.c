@@ -4471,6 +4471,24 @@ static const NandContentInfo *nand_find_content_info(u32 content_id)
     return NULL;
 }
 
+static const NandSharedContentInfo *nand_find_shared_content_by_hash(
+    const u8 hash[20]
+)
+{
+    u32 i;
+
+    if (!nand_shared_map_loaded || hash == NULL)
+        return NULL;
+
+    for (i = 0; i < nand_shared_content_count; ++i)
+    {
+        if (memcmp(nand_shared_contents[i].hash, hash, 20) == 0)
+            return &nand_shared_contents[i];
+    }
+
+    return NULL;
+}
+
 static int nand_get_current_title_path(
     const char *path,
     char *title_path,
@@ -5512,9 +5530,19 @@ static void show_nand_file_info(void)
             return;
         }
 
+        /*
+         * Read /shared1/content.map and compare each TMD content SHA-1
+         * against the map's SHA-1 values. This is strictly observational:
+         * no NAND files are modified.
+         *
+         * "NO MATCH" is only reported after content.map was parsed
+         * successfully. A read/parse failure is reported as unavailable.
+         */
+        nand_load_shared_content_map();
+
         printf("\n");
         print_centered("TMD Content Records");
-        print_centered("ID       Index Type   Size (bytes)  SHA-1");
+        print_centered("ID Index Type Size SHA-1 / content.map");
 
         if (nand_tmd_content_count == 0)
         {
@@ -5538,7 +5566,9 @@ static void show_nand_file_info(void)
             {
                 const NandContentInfo *content_info =
                     &nand_tmd_contents[i];
+                const NandSharedContentInfo *shared_info;
                 char hash_text[32];
+                char map_text[32];
 
                 snprintf(
                     hash_text,
@@ -5552,17 +5582,52 @@ static void show_nand_file_info(void)
                     content_info->hash[19]
                 );
 
+                if (nand_shared_map_loaded)
+                {
+                    shared_info =
+                        nand_find_shared_content_by_hash(
+                            content_info->hash
+                        );
+
+                    if (shared_info != NULL)
+                    {
+                        snprintf(
+                            map_text,
+                            sizeof(map_text),
+                            "MAP:%s",
+                            shared_info->filename
+                        );
+                    }
+                    else
+                    {
+                        snprintf(
+                            map_text,
+                            sizeof(map_text),
+                            "MAP:NO MATCH"
+                        );
+                    }
+                }
+                else
+                {
+                    snprintf(
+                        map_text,
+                        sizeof(map_text),
+                        "MAP:UNAVAILABLE"
+                    );
+                }
+
                 if ((content_info->size >> 32) == 0)
                 {
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x   %-5u %-6x %-12u %s",
+                        "%08x %u %x %u %s %s",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
                         (unsigned int)content_info->type,
                         (unsigned int)content_info->size,
-                        hash_text
+                        hash_text,
+                        map_text
                     );
                 }
                 else
@@ -5570,13 +5635,14 @@ static void show_nand_file_info(void)
                     snprintf(
                         line,
                         sizeof(line),
-                        "%08x   %-5u %-6x %08x:%08x %s",
+                        "%08x %u %x %08x:%08x %s %s",
                         (unsigned int)content_info->content_id,
                         (unsigned int)content_info->index,
                         (unsigned int)content_info->type,
                         (unsigned int)(content_info->size >> 32),
                         (unsigned int)(content_info->size & 0xFFFFFFFF),
-                        hash_text
+                        hash_text,
+                        map_text
                     );
                 }
 
@@ -5594,9 +5660,12 @@ static void show_nand_file_info(void)
                 (unsigned int)nand_tmd_content_count
             );
             print_centered(line);
-        }
 
-        printf("\n");
+            if (nand_shared_map_loaded)
+                print_centered("MAP = SHA-1 match in /shared1/content.map");
+            else if (nand_shared_status[0] != '\0')
+                print_centered(nand_shared_status);
+        }        printf("\n");
         print_centered("UP / DOWN = Scroll records");
         print_centered("B = Back    PLUS = Main Menu");
         return;
