@@ -129,3 +129,49 @@ Current knowledge is sufficient to say that:
 
 The exact physical-storage mapping for every observed WiiWare/VC title remains an active research question.
 
+
+
+## 26. TMD/content.map hardware validation
+
+The shared-content parser was tested against installed downloadable titles.
+
+### Ocarina of Time VC
+
+- 7 TMD content records observed.
+- 3 records are type 0x8001.
+- All 3 shared SHA-1 values matched entries in /shared1/content.map.
+- Two observed resolutions were content ID 00000003 -> 00000031 and content ID 00000004 -> 00000032.
+
+### Super Mario 64 VC
+
+- 7 TMD content records observed.
+- 3 shared records observed.
+- All 3 shared SHA-1 values matched content.map.
+
+### Cave Story
+
+- 7 TMD content records observed.
+- All observed records are type 0x0001.
+- Therefore no shared-content lookup is expected.
+
+### Super Smash Bros. 64 VC
+
+- Current TMD inspection produced a DSI exception.
+- Cause remains unresolved.
+- Do not infer content layout from this failure.
+
+The important implementation lesson is that the TMD type must determine whether content.map is consulted. A SHA-1 appearing elsewhere is not enough to classify a record as shared.
+
+## 27. Next investigation: physical .app resolution
+
+The next stage is to expose a physical location for each TMD content record.
+
+For NORMAL records, investigate the title-local content path using the TMD content ID.
+
+For SHARED records, use the TMD SHA-1 to resolve the shared identifier through content.map.
+
+The desired result is a table that answers:
+
+    TMD record -> type -> SHA-1 -> physical .app path
+
+This should remain read-only and should not require a recursive NAND preload.
