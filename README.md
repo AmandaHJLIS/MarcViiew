@@ -105,6 +105,12 @@ ViiewLib remains under active development and does not currently claim complete 
 
 https://github.com/AmandaHJLIS/ViiewLib
 
+## Wii NAND, WiiWare and Virtual Console Research
+
+For documentation on MarcViiew's ongoing research regarding MarcViiew implementation behaviour, hardware observations, unresolved hypotheses and downloadable-title suport.
+
+Please visit, [Wii NAND, WiiWare and Virtual Console Research](docs/WII_NAND_RESEARCH.md).
+
 ## Game Metadata
 
 MarcViiew currently uses a locally stored database generated from GameTDB data. The database contains information for over 10,000 Wii game records and provides the metadata used by MarcViiew to identify and describe known games.
