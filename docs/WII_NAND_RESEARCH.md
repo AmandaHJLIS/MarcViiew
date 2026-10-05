@@ -44,7 +44,7 @@ A TMD record is a logical content description. The physical location depends on 
 Observed hardware results:
 
 - Cave Story: 7 records, 0 shared records.
-- Ocarina of Time VC: 7 records, 3 shared records; 3/3 shared SHA-1 matches.
+- The Legend of Zeldia Ocarina of Time VC: 7 records, 3 shared records; 3/3 shared SHA-1 matches.
 - Super Mario 64 VC: 7 records, 3 shared records; 3/3 shared SHA-1 matches.
 - Super Smash Bros. 64 VC: current TMD inspection causes a DSI exception; cause unresolved.
 
