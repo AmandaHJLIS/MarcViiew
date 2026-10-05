@@ -10,10 +10,10 @@ MarcViiew also includes a NAND (read only) navigational tool for viewing data re
 
 The project is designed as an experimental library and information science project for libraries, librarians, library technicians, and LIS students. It explores how established cataloguing standards, controlled vocabularies, metadata practices, and digital-library workflows can be adapted to a Wii homebrew environment.
 
-> **DISCLAIMER:** Due to Vwii IOS patching limitations, the NAND navigational reader may be limited to what it can do. For inspecting Wiiware, VC and wii channel directory content, it is better to either use a real Wii or emulate through Dolphin. 
-
 For additional information, please visit:
 https://amandahjlis.github.io/
+
+> **DISCLAIMER:** Due to Vwii IOS patching limitations, the NAND navigational reader may be limited to what it can do. For inspecting Wiiware, VC and wii channel directory content, it is better to either use a real Wii or emulate through Dolphin. 
 
 <img width="249" height="233" alt="MarcViiewExperimental" src="https://github.com/user-attachments/assets/8a00d282-8c43-45c1-a35a-62942503e5f0" />
 
