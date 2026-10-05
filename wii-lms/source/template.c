@@ -123,6 +123,7 @@ static char encode_status[160] = "";
 #define INPUT_BACK     (1 << 5)
 #define INPUT_PLUS     (1 << 6)
 #define INPUT_HOME     (1 << 7)
+#define INPUT_ONE      (1 << 8)
 
 
 void print_spaces(
@@ -331,11 +332,21 @@ u32 get_input() {
     )
         input |= INPUT_HOME;
 
+    if (
+        pressed & WPAD_BUTTON_1
+    )
+        input |= INPUT_ONE;
+
 
     if (
         pressed & WPAD_CLASSIC_BUTTON_HOME
     )
         input |= INPUT_HOME;
+
+    if (
+        pressed & WPAD_CLASSIC_BUTTON_1
+    )
+        input |= INPUT_ONE;
 
 
     return input;
@@ -418,6 +429,21 @@ typedef struct
 } NandEntry;
 
 #define NAND_MAX_TMD_CONTENTS 512
+#define NAND_MAX_SHARED_CONTENTS 512
+#define NAND_SHARED_CONTENT_RECORD_SIZE 28
+
+typedef struct
+{
+    char filename[9];
+    u8 hash[20];
+} NandSharedContentInfo;
+
+static NandSharedContentInfo nand_shared_contents[NAND_MAX_SHARED_CONTENTS];
+static u32 nand_shared_content_count = 0;
+static int nand_shared_map_loaded = 0;
+static int nand_shared_map_scroll = 0;
+static char nand_shared_status[160] = "";
+
 
 typedef struct
 {
@@ -3871,6 +3897,9 @@ void show_encode_game_menu() {
 
 static void show_nand_browser(void);
 static void show_nand_file_info(void);
+static void show_nand_shared_map(void);
+static int nand_load_shared_content_map(void);
+static int nand_export_shared1_inventory(void);
 
 static int nand_get_title_context(
     const char *path,
@@ -4915,6 +4944,318 @@ static int nand_enter_selected(void)
     return 0;
 }
 
+static int nand_load_shared_content_map(void)
+{
+    s32 fd;
+    fstats stats;
+    u8 *buffer = NULL;
+    s32 bytes_read;
+    u32 record_count;
+    u32 i;
+
+    nand_shared_content_count = 0;
+    nand_shared_map_loaded = 0;
+    nand_shared_status[0] = '\0';
+
+    fd = ISFS_Open("/shared1/content.map", ISFS_OPEN_READ);
+    if (fd < 0)
+    {
+        snprintf(nand_shared_status, sizeof(nand_shared_status),
+                 "Could not open /shared1/content.map (%d).", (int)fd);
+        return 0;
+    }
+
+    if (ISFS_GetFileStats(fd, &stats) != ISFS_OK ||
+        stats.file_length <= 0 ||
+        (stats.file_length % NAND_SHARED_CONTENT_RECORD_SIZE) != 0)
+    {
+        ISFS_Close(fd);
+        snprintf(nand_shared_status, sizeof(nand_shared_status),
+                 "Invalid content.map size.");
+        return 0;
+    }
+
+    record_count = (u32)(stats.file_length / NAND_SHARED_CONTENT_RECORD_SIZE);
+
+    if (record_count > NAND_MAX_SHARED_CONTENTS)
+        record_count = NAND_MAX_SHARED_CONTENTS;
+
+    buffer = (u8 *)memalign(
+        32,
+        (size_t)record_count * NAND_SHARED_CONTENT_RECORD_SIZE
+    );
+
+    if (buffer == NULL)
+    {
+        ISFS_Close(fd);
+        snprintf(nand_shared_status, sizeof(nand_shared_status),
+                 "Not enough memory for content.map.");
+        return 0;
+    }
+
+    bytes_read = ISFS_Read(
+        fd,
+        buffer,
+        (u32)record_count * NAND_SHARED_CONTENT_RECORD_SIZE
+    );
+
+    ISFS_Close(fd);
+
+    if (bytes_read != (s32)(record_count * NAND_SHARED_CONTENT_RECORD_SIZE))
+    {
+        free(buffer);
+        snprintf(nand_shared_status, sizeof(nand_shared_status),
+                 "Could not read content.map.");
+        return 0;
+    }
+
+    for (i = 0; i < record_count; ++i)
+    {
+        const u8 *record =
+            &buffer[i * NAND_SHARED_CONTENT_RECORD_SIZE];
+
+        memcpy(nand_shared_contents[i].filename, record, 8);
+        nand_shared_contents[i].filename[8] = '\0';
+        memcpy(nand_shared_contents[i].hash, record + 8, 20);
+    }
+
+    free(buffer);
+
+    nand_shared_content_count = record_count;
+    nand_shared_map_loaded = 1;
+    nand_shared_map_scroll = 0;
+
+    snprintf(nand_shared_status, sizeof(nand_shared_status),
+             "%u shared content record(s).", (unsigned int)record_count);
+
+    return 1;
+}
+
+static int nand_export_shared1_inventory(void)
+{
+    FILE *output;
+    u32 entry_count = 0;
+    u32 read_count;
+    char *name_buffer = NULL;
+    s32 result;
+    u32 i;
+    int exported = 0;
+
+    output = fopen("sd:/marcviiew/shared1_inventory.txt", "w");
+
+    if (output == NULL)
+    {
+        snprintf(nand_status, sizeof(nand_status),
+                 "Could not create shared1_inventory.txt.");
+        return 0;
+    }
+
+    result = ISFS_ReadDir("/shared1", NULL, &entry_count);
+
+    if (result != ISFS_OK)
+    {
+        fclose(output);
+        snprintf(nand_status, sizeof(nand_status),
+                 "Could not read /shared1 directory (%d).", (int)result);
+        return 0;
+    }
+
+    read_count = entry_count;
+
+    if (read_count > NAND_MAX_ENTRIES)
+        read_count = NAND_MAX_ENTRIES;
+
+    if (read_count > 0)
+    {
+        name_buffer = (char *)memalign(
+            32,
+            (size_t)read_count * ISFS_MAXPATH
+        );
+
+        if (name_buffer == NULL)
+        {
+            fclose(output);
+            snprintf(nand_status, sizeof(nand_status),
+                     "Not enough memory for /shared1 listing.");
+            return 0;
+        }
+
+        result = ISFS_ReadDir("/shared1", name_buffer, &read_count);
+
+        if (result != ISFS_OK)
+        {
+            free(name_buffer);
+            fclose(output);
+            snprintf(nand_status, sizeof(nand_status),
+                     "Could not read /shared1 entries (%d).", (int)result);
+            return 0;
+        }
+    }
+
+    fprintf(output, "MarcViiew Shared Content Inventory\n");
+    fprintf(output, "================================\n");
+    fprintf(output, "Path: /shared1/\n");
+    fprintf(output, "Entries reported: %u\n\n", (unsigned int)entry_count);
+    fprintf(output, "Name                         Type       Size\n");
+    fprintf(output, "------------------------------------------------------------\n");
+
+    if (read_count > 0)
+    {
+        const char *name = name_buffer;
+
+        for (i = 0; i < read_count; ++i)
+        {
+            char path[ISFS_MAXPATH];
+            s32 fd;
+            fstats stats;
+            const char *type = "UNKNOWN";
+            u32 size = 0;
+
+            snprintf(path, sizeof(path), "/shared1/%s", name);
+
+            fd = ISFS_Open(path, ISFS_OPEN_READ);
+
+            if (fd >= 0)
+            {
+                if (ISFS_GetFileStats(fd, &stats) == ISFS_OK)
+                {
+                    type = "FILE";
+                    size = stats.file_length;
+                }
+
+                ISFS_Close(fd);
+            }
+            else
+            {
+                u32 child_count = 0;
+
+                if (ISFS_ReadDir(path, NULL, &child_count) == ISFS_OK)
+                    type = "DIRECTORY";
+            }
+
+            fprintf(
+                output,
+                "%-28s %-10s %u bytes\n",
+                name,
+                type,
+                (unsigned int)size
+            );
+
+            exported++;
+            name += strlen(name) + 1;
+        }
+    }
+
+    fprintf(output, "\nExported entries: %d\n", exported);
+    fprintf(output, "Read-only inventory; NAND contents were not modified.\n");
+
+    if (name_buffer != NULL)
+        free(name_buffer);
+
+    fclose(output);
+
+    snprintf(nand_status, sizeof(nand_status),
+             "Exported /shared1 inventory to SD.");
+
+    return 1;
+}
+
+static void show_nand_shared_map(void)
+{
+    int i;
+    int visible_end;
+    char line[160];
+
+    printf("\x1b[2J\x1b[H");
+    print_ui_line('=');
+    print_centered("Shared Content Map");
+    print_ui_line('=');
+    printf("\n");
+
+    print_centered("/shared1/content.map");
+    print_centered("Read-only parser");
+    printf("\n");
+
+    if (!nand_shared_map_loaded)
+    {
+        print_centered("content.map could not be parsed.");
+        if (nand_shared_status[0] != '\0')
+            print_centered(nand_shared_status);
+
+        printf("\n");
+        print_centered("B = Back    PLUS = Main Menu");
+        return;
+    }
+
+    if (nand_shared_status[0] != '\0')
+        print_centered(nand_shared_status);
+
+    printf("\n");
+    print_centered("File       SHA-1");
+
+    if (nand_shared_content_count == 0)
+    {
+        print_centered("No shared content records found.");
+    }
+    else
+    {
+        if (nand_shared_map_scroll < 0)
+            nand_shared_map_scroll = 0;
+
+        if ((u32)nand_shared_map_scroll >= nand_shared_content_count)
+            nand_shared_map_scroll =
+                (int)nand_shared_content_count - 1;
+
+        visible_end = nand_shared_map_scroll + 6;
+
+        if ((u32)visible_end > nand_shared_content_count)
+            visible_end = (int)nand_shared_content_count;
+
+        for (i = nand_shared_map_scroll; i < visible_end; ++i)
+        {
+            char hash_text[41];
+            int j;
+
+            for (j = 0; j < 20; ++j)
+            {
+                snprintf(
+                    hash_text + (j * 2),
+                    sizeof(hash_text) - (j * 2),
+                    "%02x",
+                    nand_shared_contents[i].hash[j]
+                );
+            }
+
+            hash_text[40] = '\0';
+
+            snprintf(
+                line,
+                sizeof(line),
+                "%-8s  %s",
+                nand_shared_contents[i].filename,
+                hash_text
+            );
+
+            print_centered(line);
+        }
+
+        printf("\n");
+        snprintf(
+            line,
+            sizeof(line),
+            "Records %u-%u of %u",
+            (unsigned int)(nand_shared_map_scroll + 1),
+            (unsigned int)visible_end,
+            (unsigned int)nand_shared_content_count
+        );
+        print_centered(line);
+    }
+
+    printf("\n");
+    print_centered("UP / DOWN = Scroll");
+    print_centered("B = Back    PLUS = Main Menu");
+}
+
 static void show_nand_browser(void)
 {
     int i;
@@ -5122,6 +5463,8 @@ static void show_nand_browser(void)
 
     printf("\n");
     print_centered("UP / DOWN = Move    A = Open");
+    if (strcmp(nand_current_path, "/shared1") == 0)
+        print_centered("1 = Export /shared1 inventory");
     print_centered("B = Back    PLUS = Main Menu");
 }
 
@@ -7192,6 +7535,15 @@ int main(void)
         */
         if (screen == 15)
         {
+            if (
+                (input & INPUT_ONE) &&
+                strcmp(nand_current_path, "/shared1") == 0
+            )
+            {
+                nand_export_shared1_inventory();
+                show_nand_browser();
+            }
+
             if (input & INPUT_UP)
             {
                 if (nand_selection > 0)
@@ -7233,9 +7585,23 @@ int main(void)
                     else if (nand_entries[nand_selection].type ==
                              NAND_ENTRY_FILE)
                     {
-                        nand_tmd_scroll = 0;
-                        screen = 16;
-                        show_nand_file_info();
+                        if (
+                            strcmp(
+                                nand_entries[nand_selection].path,
+                                "/shared1/content.map"
+                            ) == 0
+                        )
+                        {
+                            nand_load_shared_content_map();
+                            screen = 17;
+                            show_nand_shared_map();
+                        }
+                        else
+                        {
+                            nand_tmd_scroll = 0;
+                            screen = 16;
+                            show_nand_file_info();
+                        }
                     }
                 }
             }
@@ -7287,6 +7653,48 @@ int main(void)
                 {
                     nand_tmd_scroll++;
                     show_nand_file_info();
+                }
+            }
+
+            if (input & INPUT_BACK)
+            {
+                screen = 15;
+                show_nand_browser();
+            }
+
+            if (input & INPUT_PLUS)
+            {
+                screen = 1;
+                show_main_menu();
+            }
+
+            VIDEO_WaitVSync();
+            continue;
+        }
+
+        /*
+            Read-only /shared1/content.map viewer.
+        */
+        if (screen == 17)
+        {
+            if (input & INPUT_UP)
+            {
+                if (nand_shared_map_scroll > 0)
+                {
+                    nand_shared_map_scroll--;
+                    show_nand_shared_map();
+                }
+            }
+
+            if (input & INPUT_DOWN)
+            {
+                if (
+                    nand_shared_map_scroll + 6 <
+                    (int)nand_shared_content_count
+                )
+                {
+                    nand_shared_map_scroll++;
+                    show_nand_shared_map();
                 }
             }
 
