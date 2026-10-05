@@ -24,3 +24,28 @@ The major unresolved problem is mapping every TMD content record to its actual i
 ## Safe research principle
 
 Prefer offline WAD/content analysis before introducing additional live-NAND probing. MarcViiew's NAND browser is intended to remain read-only.
+
+
+## Research update: TMD to physical content mapping
+
+Recent hardware tests have confirmed an important part of the downloadable-title content model.
+
+A TMD record is a logical content description. The physical location depends on its content type:
+
+    0x0001 NORMAL
+        -> investigate the title's content/<content ID>.app
+
+    0x8001 SHARED
+        -> SHA-1 lookup in /shared1/content.map
+        -> /shared1/<shared identifier>.app
+
+Observed hardware results:
+
+- Cave Story: 7 records, 0 shared records.
+- Ocarina of Time VC: 7 records, 3 shared records; 3/3 shared SHA-1 matches.
+- Super Mario 64 VC: 7 records, 3 shared records; 3/3 shared SHA-1 matches.
+- Super Smash Bros. 64 VC: current TMD inspection causes a DSI exception; cause unresolved.
+
+These observations support the current implementation model but do not yet establish a universal physical layout for every WiiWare/VC title.
+
+The next research goal is to make MarcViiew resolve and display the physical .app location for each TMD record where that location can be confirmed.
