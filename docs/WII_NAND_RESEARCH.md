@@ -51,3 +51,12 @@ Observed hardware results:
 These observations support the current implementation model but do not yet establish a universal physical layout for every WiiWare/VC title.
 
 The next research goal is to make MarcViiew resolve and display the physical .app location for each TMD record where that location can be confirmed.
+
+## Additional hardware observations
+
+The downloadable-title tests have since produced two further observations:
+
+- **Internet Channel:** 4 TMD SHA-1 values matched entries in `/shared1/content.map`. This is another positive hardware result supporting SHA-1-based shared-content resolution.
+- **Wii no Ma:** current TMD inspection produces a DSI exception. The cause is unresolved, so the exception is recorded as an implementation/test failure rather than evidence of a particular physical content layout.
+
+These results reinforce the need to distinguish confirmed hardware observations from explanations that have not yet been established.
