@@ -343,12 +343,6 @@ u32 get_input() {
     )
         input |= INPUT_HOME;
 
-    if (
-        pressed & WPAD_CLASSIC_BUTTON_1
-    )
-        input |= INPUT_ONE;
-
-
     return input;
 }
 
