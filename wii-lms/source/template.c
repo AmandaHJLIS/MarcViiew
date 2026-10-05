@@ -4677,6 +4677,103 @@ static int nand_get_current_title_path(
     return 1;
 }
 
+static int nand_resolve_content_app_path(
+    const char *title_path,
+    const NandContentInfo *content_info,
+    char *resolved_path,
+    size_t resolved_path_size
+)
+{
+    char candidate[ISFS_MAXPATH];
+    s32 fd;
+
+    if (title_path == NULL || content_info == NULL ||
+        resolved_path == NULL || resolved_path_size == 0)
+        return 0;
+
+    resolved_path[0] = '\\0';
+
+    /* Normal TMD content is stored under the title's content directory. */
+    if (content_info->type != 0x0001)
+        return 0;
+
+    snprintf(
+        candidate,
+        sizeof(candidate),
+        "%s/content/%08x.app",
+        title_path,
+        (unsigned int)content_info->content_id
+    );
+
+    fd = ISFS_Open(candidate, ISFS_OPEN_READ);
+    if (fd < 0)
+        return 0;
+
+    ISFS_Close(fd);
+
+    snprintf(
+        resolved_path,
+        resolved_path_size,
+        "%s",
+        candidate
+    );
+
+    return 1;
+}
+
+static int nand_resolve_content_location(
+    const char *title_path,
+    const NandContentInfo *content_info,
+    char *resolved_path,
+    size_t resolved_path_size
+)
+{
+    const NandSharedContentInfo *shared_info;
+
+    if (title_path == NULL || content_info == NULL ||
+        resolved_path == NULL || resolved_path_size == 0)
+        return 0;
+
+    resolved_path[0] = '\\0';
+
+    if (content_info->type == 0x0001)
+        return nand_resolve_content_app_path(
+            title_path,
+            content_info,
+            resolved_path,
+            resolved_path_size
+        );
+
+    if (content_info->type != 0x8001 || !nand_shared_map_loaded)
+        return 0;
+
+    shared_info = nand_find_shared_content_by_hash(content_info->hash);
+    if (shared_info == NULL)
+        return 0;
+
+    snprintf(
+        resolved_path,
+        resolved_path_size,
+        "/shared1/%s.app",
+        shared_info->filename
+    );
+
+    /* Verify the physical shared file before reporting its location. */
+    {
+        s32 fd = ISFS_Open(resolved_path, ISFS_OPEN_READ);
+
+        if (fd < 0)
+        {
+            resolved_path[0] = '\\0';
+            return 0;
+        }
+
+        ISFS_Close(fd);
+    }
+
+    return 1;
+}
+
 static int nand_parse_content_id(
     const char *name,
     u32 *content_id
@@ -5760,6 +5857,23 @@ static void show_nand_file_info(void)
                 const NandSharedContentInfo *shared_info;
                 char hash_text[32];
                 char map_text[32];
+                char location_text[ISFS_MAXPATH];
+                char title_path[ISFS_MAXPATH];
+                int location_found;
+
+                location_text[0] = '\\0';
+                title_path[0] = '\\0';
+                nand_get_current_title_path(
+                    entry->path,
+                    title_path,
+                    sizeof(title_path)
+                );
+                location_found = nand_resolve_content_location(
+                    title_path,
+                    content_info,
+                    location_text,
+                    sizeof(location_text)
+                );
 
                 snprintf(
                     hash_text,
@@ -5856,6 +5970,41 @@ static void show_nand_file_info(void)
                     hash_text,
                     map_text
                 );
+                print_centered(line);
+
+                if (location_found)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: %s",
+                        location_text
+                    );
+                }
+                else if (content_info->type == 0x0001)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT FOUND"
+                    );
+                }
+                else if (content_info->type == 0x8001)
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT FOUND"
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "PATH: NOT APPLICABLE"
+                    );
+                }
                 print_centered(line);
             }
 
