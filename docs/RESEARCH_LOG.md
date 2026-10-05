@@ -135,7 +135,7 @@ The exact physical-storage mapping for every observed WiiWare/VC title remains a
 
 The shared-content parser was tested against installed downloadable titles.
 
-### Ocarina of Time VC
+### The Legend of Zeldia Ocarina of Time VC
 
 - 7 TMD content records observed.
 - 3 records are type 0x8001.
