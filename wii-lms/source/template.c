@@ -5065,7 +5065,7 @@ static int nand_enter_selected(void)
 static int nand_load_shared_content_map(void)
 {
     s32 fd;
-    fstats stats;
+    fstats stats ATTRIBUTE_ALIGN(32);
     u8 *buffer = NULL;
     s32 bytes_read;
     u32 record_count;
@@ -5255,7 +5255,7 @@ static int nand_export_shared1_inventory(void)
         {
             char path[ISFS_MAXPATH];
             s32 fd;
-            fstats stats;
+            fstats stats ATTRIBUTE_ALIGN(32);
             const char *type = "UNKNOWN";
             u32 size = 0;
 
