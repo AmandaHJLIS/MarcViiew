@@ -4977,14 +4977,44 @@ static int nand_load_shared_content_map(void)
         return 0;
     }
 
-    if (ISFS_GetFileStats(fd, &stats) != ISFS_OK ||
-        stats.file_length <= 0 ||
-        (stats.file_length % NAND_SHARED_CONTENT_RECORD_SIZE) != 0)
     {
-        ISFS_Close(fd);
-        snprintf(nand_shared_status, sizeof(nand_shared_status),
-                 "Invalid content.map size.");
-        return 0;
+        s32 stats_result = ISFS_GetFileStats(fd, &stats);
+
+        if (stats_result != ISFS_OK)
+        {
+            ISFS_Close(fd);
+            snprintf(
+                nand_shared_status,
+                sizeof(nand_shared_status),
+                "GetFileStats failed (%d).",
+                (int)stats_result
+            );
+            return 0;
+        }
+
+        if (stats.file_length <= 0)
+        {
+            ISFS_Close(fd);
+            snprintf(
+                nand_shared_status,
+                sizeof(nand_shared_status),
+                "content.map is empty (size %d).",
+                (int)stats.file_length
+            );
+            return 0;
+        }
+
+        if ((stats.file_length % NAND_SHARED_CONTENT_RECORD_SIZE) != 0)
+        {
+            ISFS_Close(fd);
+            snprintf(
+                nand_shared_status,
+                sizeof(nand_shared_status),
+                "Unexpected size: %d bytes (not divisible by 28).",
+                (int)stats.file_length
+            );
+            return 0;
+        }
     }
 
     record_count = (u32)(stats.file_length / NAND_SHARED_CONTENT_RECORD_SIZE);
@@ -5193,6 +5223,7 @@ static void show_nand_shared_map(void)
         print_centered("content.map could not be parsed.");
         if (nand_shared_status[0] != '\0')
             print_centered(nand_shared_status);
+        print_centered("Expected records: 28 bytes each.");
 
         printf("\n");
         print_centered("B = Back    PLUS = Main Menu");
