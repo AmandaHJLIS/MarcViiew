@@ -5725,7 +5725,7 @@ static void show_nand_file_info(void)
                  * contents have their own <content id>.app file and
                  * should not be reported as missing from the map.
                  */
-                if ((content_info->type & 0x8000) == 0)
+                if (content_info->type != 0x8001)
                 {
                     snprintf(
                         map_text,
@@ -5818,7 +5818,7 @@ static void show_nand_file_info(void)
             print_centered(line);
 
             if (nand_shared_map_loaded)
-                print_centered("MAP = SHA-1 match in /shared1/content.map");
+                print_centered("MAP = shared TMD contents are matched by SHA-1");
             else if (nand_shared_status[0] != '\0')
                 print_centered(nand_shared_status);
         }        printf("\n");
