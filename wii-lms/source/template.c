@@ -3894,6 +3894,7 @@ static void show_nand_file_info(void);
 static void show_nand_shared_map(void);
 static int nand_load_shared_content_map(void);
 static int nand_export_shared1_inventory(void);
+static int nand_initialize_viewer(void);
 
 static int nand_get_title_context(
     const char *path,
@@ -3902,6 +3903,110 @@ static int nand_get_title_context(
     char *title_id,
     size_t title_id_size
 );
+
+static int nand_initialize_viewer(void)
+{
+    int patch_result;
+    s32 result;
+
+    if (nand_initialized)
+    {
+        if (strcmp(nand_current_path, "/") != 0)
+        {
+            strcpy(nand_current_path, "/");
+            nand_load_directory(nand_current_path);
+        }
+
+        return 1;
+    }
+
+    patch_result = nand_ios_enable_access();
+
+    if (patch_result > 0)
+    {
+        char patch_status[96];
+
+        nand_ios_get_patch_status(
+            patch_status,
+            sizeof(patch_status)
+        );
+
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "IOS patches: %s",
+            patch_status
+        );
+    }
+    else if (patch_result == 0)
+    {
+        char patch_status[96];
+
+        nand_ios_get_patch_status(
+            patch_status,
+            sizeof(patch_status)
+        );
+
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "IOS patch signatures not found: %s",
+            patch_status
+        );
+    }
+    else
+    {
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "AHBPROT unavailable; protected entries may be inaccessible."
+        );
+    }
+
+    result = ISFS_Initialize();
+
+    if (result != ISFS_OK)
+    {
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "ISFS initialization failed (%d).",
+            (int)result
+        );
+
+        return 0;
+    }
+
+    nand_initialized = 1;
+
+    /*
+     * Prime the NAND browser while the splash screen is still active.
+     * This makes the first NAND view deterministic instead of waiting
+     * for the filesystem to be initialized after the user enters it.
+     */
+    strcpy(nand_current_path, "/");
+
+    if (!nand_load_directory(nand_current_path))
+    {
+        snprintf(
+            nand_status,
+            sizeof(nand_status),
+            "Could not read NAND root directory."
+        );
+
+        return 0;
+    }
+
+    /*
+     * Load the shared-content index at the same time. A malformed or
+     * unreadable content.map must not prevent the NAND browser itself
+     * from being used; its diagnostic remains in nand_shared_status.
+     */
+    nand_load_shared_content_map();
+
+    return 1;
+}
+
 
 static int nand_identify_title(const char *path);
 static int nand_load_tmd_for_path(const char *path);
@@ -7486,7 +7591,7 @@ int main(void)
 
     show_loading_screen(
         "Loading game metadata...",
-        80
+        75
     );
 
     usleep(
@@ -7495,12 +7600,22 @@ int main(void)
 
 
     show_loading_screen(
-        "Preparing catalogue...",
-        90
+        "Initialising NAND viewer...",
+        85
+    );
+
+    nand_status[0] = '\0';
+
+    nand_initialize_viewer();
+
+
+    show_loading_screen(
+        "Loading NAND root...",
+        92
     );
 
     usleep(
-        200000
+        150000
     );
 
 
@@ -8319,83 +8434,13 @@ int main(void)
                     nand_scroll = 0;
                     nand_status[0] = '\0';
 
-                    if (!nand_initialized)
+                    if (!nand_initialize_viewer())
                     {
-                        int patch_result = nand_ios_enable_access();
-
-                        if (patch_result > 0)
-                        {
-                            char patch_status[96];
-
-                            nand_ios_get_patch_status(
-                                patch_status,
-                                sizeof(patch_status)
-                            );
-
-                            snprintf(
-                                nand_status,
-                                sizeof(nand_status),
-                                "IOS patches: %s",
-                                patch_status
-                            );
-                        }
-                        else if (patch_result == 0)
-                        {
-                            char patch_status[96];
-
-                            nand_ios_get_patch_status(
-                                patch_status,
-                                sizeof(patch_status)
-                            );
-
-                            snprintf(
-                                nand_status,
-                                sizeof(nand_status),
-                                "IOS patch signatures not found: %s",
-                                patch_status
-                            );
-                        }
-                        else
-                        {
-                            snprintf(
-                                nand_status,
-                                sizeof(nand_status),
-                                "AHBPROT unavailable; protected entries may be inaccessible."
-                            );
-                        }
-
-                        s32 result = ISFS_Initialize();
-
-                        if (result != ISFS_OK)
-                        {
-                            snprintf(
-                                nand_status,
-                                sizeof(nand_status),
-                                "ISFS initialization failed (%d).",
-                                (int)result
-                            );
-                        }
-                        else
-                        {
-                            nand_initialized = 1;
-                        }
-                    }
-
-                    if (nand_initialized)
-                    {
-                        strcpy(
-                            nand_current_path,
-                            "/"
-                        );
-
-                        if (!nand_load_directory(nand_current_path))
-                        {
-                            snprintf(
-                                nand_status,
-                                sizeof(nand_status),
-                                "Could not read NAND root directory."
-                            );
-                        }
+                        /*
+                         * Keep the NAND browser available so the failure
+                         * status can be inspected instead of trapping the
+                         * user in the main menu.
+                         */
                     }
 
                     screen = 15;
