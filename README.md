@@ -13,7 +13,7 @@ The project is designed as an experimental library and information science proje
 For additional information, please visit:
 https://amandahjlis.github.io/
 
-> **DISCLAIMER:** Due to Vwii IOS patching limitations, the NAND navigational reader may be limited to what it can do. For inspecting Wiiware, VC and wii channel directory content, it is better to either use a real Wii or emulate through Dolphin. 
+> **DISCLAIMER:** Due to Vwii IOS patching limitations, the NAND navigational reader may be limited to what it can do. For inspecting Wiiware, VC and Wii channel directory content, it is recommended to either use a real Wii or emulate through Dolphin. 
 
 <img width="249" height="233" alt="MarcViiewExperimental" src="https://github.com/user-attachments/assets/8a00d282-8c43-45c1-a35a-62942503e5f0" />
 
