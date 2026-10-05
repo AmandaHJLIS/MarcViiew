@@ -47,7 +47,7 @@ This branch is not intended to be a permanent fork of the project; it is a worki
 
 MarcViiew is currently in **beta development**.
 
-The current experimental state corresponds to the upcoming **0.8.0-beta development milestone**, following the feature-focused 0.6.0-beta milestone.
+The current experimental state corresponds to the upcoming **0.8.0-beta development milestone**, following the feature-focused 0.7.0-beta milestone.
 
 The `imported-records-template` branch is an experimental development branch rather than a stable release. Features on this branch should be considered provisional until they have been built and tested on real Wii hardware.
 
