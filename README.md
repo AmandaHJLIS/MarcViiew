@@ -296,7 +296,7 @@ The following ideas are planned as longer-term research and development areas ra
 ### Wii User Interface Research
 
 * Further refinement of MarcViiew's Wii user interface and reusable UI components
-* Research into UI architecture and interaction patterns used by newer Wii homebrew projects, including **RiftWii**, to inform future MarcViiew UI development
+* Research into UI libraries such as `dborth/libgui`.
 * Improved screen layout, navigation, text rendering, scrolling, and input handling
 
 ### WDRD and Digital Library Research
