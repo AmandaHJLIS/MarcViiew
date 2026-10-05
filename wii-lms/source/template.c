@@ -5818,7 +5818,48 @@ static void show_nand_file_info(void)
             print_centered(line);
 
             if (nand_shared_map_loaded)
-                print_centered("MAP = shared TMD contents are matched by SHA-1");
+            {
+                u32 shared_record_count = 0;
+                u32 shared_match_count = 0;
+                u32 record_index;
+
+                for (record_index = 0;
+                     record_index < nand_tmd_content_count;
+                     ++record_index)
+                {
+                    const NandContentInfo *record =
+                        &nand_tmd_contents[record_index];
+
+                    if (record->type == 0x8001)
+                    {
+                        const NandSharedContentInfo *shared_info =
+                            nand_find_shared_content_by_hash(record->hash);
+
+                        shared_record_count++;
+
+                        if (shared_info != NULL)
+                            shared_match_count++;
+                    }
+                }
+
+                if (shared_record_count == 0)
+                {
+                    print_centered(
+                        "MAP = loaded; this title has no shared TMD contents"
+                    );
+                }
+                else
+                {
+                    snprintf(
+                        line,
+                        sizeof(line),
+                        "MAP = %u/%u shared TMD contents matched by SHA-1",
+                        (unsigned int)shared_match_count,
+                        (unsigned int)shared_record_count
+                    );
+                    print_centered(line);
+                }
+            }
             else if (nand_shared_status[0] != '\0')
                 print_centered(nand_shared_status);
         }        printf("\n");
