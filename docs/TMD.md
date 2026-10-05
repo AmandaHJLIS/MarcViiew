@@ -1,6 +1,6 @@
 # TMD — Title Metadata
 
-**Last Updated:** 3rd of October 2026
+**Last Updated:** 5th of October 2026
 
 ## 6. TMD (Title Metadata)
 
