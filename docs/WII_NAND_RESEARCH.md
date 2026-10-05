@@ -1,6 +1,6 @@
 # Wii NAND, WiiWare and Virtual Console Research
 
-**Last Updated:** 3rd of October 2026
+**Last Updated:** 5th of October 2026
 
 This directory contains the ongoing research behind MarcViiew's Wii NAND and downloadable-title support.
 
