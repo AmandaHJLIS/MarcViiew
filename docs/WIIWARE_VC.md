@@ -197,7 +197,7 @@ These can be exposed later without touching additional NAND paths.
 
 The first mixed-content VC tests provide useful evidence for the relationship between TMD records and /shared1/content.map.
 
-### Ocarina of Time VC
+### The Legend of Zeldia Ocarina of Time VC
 
 Observed:
 
