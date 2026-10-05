@@ -3895,6 +3895,7 @@ static void show_nand_shared_map(void);
 static int nand_load_shared_content_map(void);
 static int nand_export_shared1_inventory(void);
 static int nand_initialize_viewer(void);
+static int nand_load_directory(const char *path);
 
 static int nand_get_title_context(
     const char *path,
