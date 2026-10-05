@@ -273,3 +273,53 @@ Current TMD inspection of Wii no Ma produced a DSI exception.
 The cause has not been established. This is recorded as a reproducible implementation/test failure, not as evidence that Wii no Ma has an unusual content layout.
 
 Further investigation should first establish where the exception occurs before drawing conclusions about its TMD or physical content structure.
+
+## 22. Muscle March shared-content hardware observation
+
+Muscle March provided another mixed-content hardware test.
+
+Observed title-local .app files in:
+
+    /title/00010001/574d4d50/content/
+
+The six observed files corresponded to these TMD content indices/content IDs:
+
+    index 0 -> 00000009.app
+    index 1 -> 00000001.app
+    index 2 -> 00000002.app
+    index 3 -> 00000003.app
+    index 4 -> 0000000a.app
+    index 8 -> 00000008.app
+
+This provides a concrete example where NORMAL TMD content can be correlated with physically visible title-local .app files.
+
+Muscle March also contained SHARED (0x8001) content. One observed record was:
+
+    content ID 00000005
+    index 5
+    type 8001
+    size 2156800 bytes
+    SHA-1 3644384b...da27
+    content.map -> 0000002f
+    physical path -> /shared1/0000002f.app
+
+A further observed shared record was:
+
+    content ID 00000006
+    index 6
+    type 8001
+    size 370880 bytes
+
+The complete SHA-1/content.map mapping for the latter record was not recorded in this test.
+
+This is useful additional hardware evidence that a single WiiWare title can combine:
+
+    NORMAL
+        -> title-local content/*.app
+
+    SHARED (0x8001)
+        -> TMD SHA-1
+        -> /shared1/content.map
+        -> /shared1/<identifier>.app
+
+The observation is recorded as hardware evidence; it does not by itself establish the complete physical layout of every WiiWare or VC title.
