@@ -140,7 +140,9 @@ An attempt to refresh the current title UID with ES_SetUID during NAND-browser i
 
 The experiment was reverted.
 
-### Do not casually read /shared1/content.map
+The experimental branch now has a narrower read-only parser. It reads the existing 28-byte map records into memory, closes the NAND file, and does not write anything back. It should still be treated as a hardware research feature and tested carefully.
+
+### Do not casually modify /shared1/content.map
 
 A TMD-viewer experiment that opened and parsed /shared1/content.map caused title directories to become inaccessible or marked unknown.
 
@@ -156,3 +158,8 @@ Filesystem access and ES title identification should remain conceptually separat
 
 The user's locally stored working source should be treated as a golden backup before further NAND experiments.
 
+
+
+### Shared-content inventory export
+
+While browsing /shared1/, pressing 1 creates sd:/marcviiew/shared1_inventory.txt containing the visible entry names, basic type, and file size. This is an SD-side report; it does not copy or modify NAND.
