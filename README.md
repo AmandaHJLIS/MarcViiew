@@ -17,7 +17,7 @@ https://amandahjlis.github.io/
 
 For the experimental branch, please visit:
 https://github.com/AmandaHJLIS/MarcViiew/tree/imported-records-template
-> **Note:** The experimental branch is not recommended to use. It includes hardware testing which may result in DSI errors, experimental IOS changes and overall instability. Use with caution.
+> **Note:** The experimental branch is not recommended to use. It is designed for hardware testing which may result in DSI errors, experimental IOS changes and overall instability. Use with caution and have your NAND backed up.
 
 > **Branch note:** This README describes the **`main` branch**. The former `imported-records-template` experimental branch has been merged into `main` following hardware testing. Future Wii application source changes can continue to be developed experimentally before being merged.
 
