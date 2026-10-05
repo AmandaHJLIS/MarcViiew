@@ -5276,6 +5276,9 @@ static void show_nand_browser(void)
     if (nand_status[0] != '\0')
         print_centered(nand_status);
 
+    if (strcmp(nand_current_path, "/shared1") == 0)
+        print_centered("1 = Export /shared1 inventory to SD");
+
     snprintf(
         line,
         sizeof(line),
@@ -7586,6 +7589,7 @@ int main(void)
                             ) == 0
                         )
                         {
+                            nand_shared_map_scroll = 0;
                             nand_load_shared_content_map();
                             screen = 17;
                             show_nand_shared_map();
