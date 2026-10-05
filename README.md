@@ -13,6 +13,10 @@ The project is designed as an experimental library and information science proje
 For additional information, please visit:
 https://amandahjlis.github.io/
 
+For the experimental branch, please visit:
+https://github.com/AmandaHJLIS/MarcViiew/tree/imported-records-template
+> **Note:** The experimental branch is not recommended to use. It includes hardware testing which may result in DSI errors, experimental IOS changes and overall instability. Use with caution.
+
 > **Branch note:** This README describes the **`main` branch**. The former `imported-records-template` experimental branch has been merged into `main` following hardware testing. Future Wii application source changes can continue to be developed experimentally before being merged.
 
 ## MARC 21
