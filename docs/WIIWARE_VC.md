@@ -191,3 +191,63 @@ The current viewer focuses on content records. Other useful TMD fields include:
 
 These can be exposed later without touching additional NAND paths.
 
+
+
+## 19. Shared-content hardware observations
+
+The first mixed-content VC tests provide useful evidence for the relationship between TMD records and /shared1/content.map.
+
+### Ocarina of Time VC
+
+Observed:
+
+    7 total TMD content records
+    3 shared (0x8001) records
+    3/3 shared SHA-1 values matched content.map
+
+Two observed shared mappings were:
+
+    00000003  index 3  type 8001  -> /shared1/00000031.app
+    00000004  index 4  type 8001  -> /shared1/00000032.app
+
+The mapping is established by SHA-1, not by assuming that the TMD content ID is the shared filename.
+
+### Super Mario 64 VC
+
+Observed:
+
+    7 total TMD content records
+    3 shared records
+    3/3 shared SHA-1 values matched content.map
+
+This independently reproduces the same shared-content pattern seen with Ocarina of Time.
+
+### Cave Story
+
+Observed:
+
+    7 total TMD content records
+    0 shared records
+    0 shared SHA-1 matches expected
+
+This is not a failed lookup. Because its observed records are NORMAL (0x0001), content.map is not the correct lookup mechanism for those records.
+
+### Super Smash Bros. 64 VC
+
+The current TMD inspection produced a DSI exception. The cause is not yet established.
+
+This should be recorded as an implementation/test failure rather than evidence about the title's content layout.
+
+## 20. Current physical-location goal
+
+The next useful TMD-viewer improvement is to show the physical content location where it can be established:
+
+    NORMAL:
+        /title/<type>/<id>/content/<content ID>.app
+
+    SHARED:
+        /shared1/<identifier>.app
+
+For shared records, the identifier comes from the SHA-1 match in content.map.
+
+Where a physical file cannot be confirmed, the UI should say so rather than inventing a path.
