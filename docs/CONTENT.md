@@ -1,6 +1,6 @@
 # Wii Content
 
-**Last Updated:** 3rd of October 2026
+**Last Updated:** 5th of October 2026
 
 ## 9. Normal content versus physical storage
 
