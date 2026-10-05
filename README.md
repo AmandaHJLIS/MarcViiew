@@ -13,6 +13,7 @@ The project is designed as an experimental library and information science proje
 For additional information, please visit:
 https://amandahjlis.github.io/
 
+<img width="249" height="233" alt="MarcViiewExperimental" src="https://github.com/user-attachments/assets/8a00d282-8c43-45c1-a35a-62942503e5f0" />
 For the experimental branch, please visit:
 https://github.com/AmandaHJLIS/MarcViiew/tree/imported-records-template
 > **Note:** The experimental branch is not recommended to use. It includes hardware testing which may result in DSI errors, experimental IOS changes and overall instability. Use with caution.
