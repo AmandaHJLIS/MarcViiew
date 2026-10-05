@@ -58,7 +58,7 @@ Therefore:
 
 > The shared-content relationship is established by format documentation, but MarcViiew does not yet have a reliable shared-content reader.
 
-The earlier experimental content.map reader should not be treated as a safe implementation.
+The current branch may contain a read-only research parser; its results must still be treated as hardware research data, not as permission to write or alter content.map.
 
 ## 13. data/ contents
 
@@ -76,4 +76,49 @@ Exact filenames and meanings are title-dependent.
 A file such as banner.bin should not automatically be interpreted as executable content.
 
 MarcViiew currently treats the NAND browser primarily as a structural viewer rather than attempting to interpret every binary file.
+
+
+
+## 11. Resolving a TMD record to a physical .app
+
+MarcViiew's long-term goal is to turn a TMD content record into a physical NAND location.
+
+The two common paths are:
+
+    NORMAL (0x0001)
+        TMD content ID
+            |
+            v
+        /title/<type>/<id>/content/<content ID>.app
+
+    SHARED (0x8001)
+        TMD SHA-1
+            |
+            v
+        /shared1/content.map
+            |
+            v
+        /shared1/<shared identifier>.app
+
+The shared path is necessary because a shared-content filename does not have to equal the TMD content ID.
+
+The normal path should be treated as the first physical-location probe, while the shared path requires SHA-1 resolution.
+
+## 12. Hardware observations
+
+Three useful title tests have now been recorded:
+
+### Cave Story
+
+The observed TMD contains 7 normal (0x0001) records and no shared (0x8001) records. Therefore content.map is not expected to resolve any of its TMD records.
+
+### Ocarina of Time VC
+
+The observed TMD contains 7 records, including 3 shared (0x8001) records. All 3 shared records produced SHA-1 matches in /shared1/content.map.
+
+### Super Mario 64 VC
+
+The observed TMD contains 7 records, including 3 shared records. All 3 shared records produced SHA-1 matches in /shared1/content.map.
+
+These observations are hardware-test results for the installed titles and should remain separate from general format claims.
 
