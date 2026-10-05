@@ -251,3 +251,25 @@ The next useful TMD-viewer improvement is to show the physical content location 
 For shared records, the identifier comes from the SHA-1 match in content.map.
 
 Where a physical file cannot be confirmed, the UI should say so rather than inventing a path.
+
+## 21. Additional hardware observations
+
+### Internet Channel
+
+The Internet Channel provided another positive shared-content test.
+
+Observed:
+
+    4 TMD SHA-1 values matched entries in /shared1/content.map
+
+This is useful because it extends the shared-content evidence beyond the VC titles already tested. The result supports the current observation that shared content can be resolved by comparing the TMD SHA-1 against content.map rather than by assuming that the TMD content ID is the shared filename.
+
+The total number of TMD records and the complete physical `.app` mapping were not established by this observation alone.
+
+### Wii no Ma
+
+Current TMD inspection of Wii no Ma produced a DSI exception.
+
+The cause has not been established. This is recorded as a reproducible implementation/test failure, not as evidence that Wii no Ma has an unusual content layout.
+
+Further investigation should first establish where the exception occurs before drawing conclusions about its TMD or physical content structure.
