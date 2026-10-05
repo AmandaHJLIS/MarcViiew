@@ -44,13 +44,15 @@ The documented relationship is effectively:
          v
     shared .app filename
 
-This is why looking for /shared1/<TMD content ID>.app is incorrect.
+This is why looking for /shared1/<TMD content ID>.app is incorrect. The map uses 28-byte records: an 8-byte shared-content identifier followed by its 20-byte SHA-1 digest. The NAND file is named with that identifier plus `.app`. citeturn1search0turn1search2
 
 ### MarcViiew shared-content experiment
 
 MarcViiew briefly experimented with reading /shared1/content.map from the TMD viewer.
 
 That experiment was rolled back because accessing the shared-content map caused NAND browsing regressions, including directories becoming inaccessible or marked unknown.
+
+MarcViiew now has a deliberately read-only research viewer for /shared1/content.map, plus a /shared1/ inventory exporter. Selecting content.map opens the parser; pressing 1 while browsing /shared1/ writes sd:/marcviiew/shared1_inventory.txt. Neither feature modifies NAND.
 
 Therefore:
 
@@ -75,3 +77,8 @@ A file such as banner.bin should not automatically be interpreted as executable 
 
 MarcViiew currently treats the NAND browser primarily as a structural viewer rather than attempting to interpret every binary file.
 
+
+
+## 12. Current shared-content investigation
+
+The new tools are intended to compare TMD SHA-1 values against the console's shared-content map without changing the map. Cave Story is a useful test case because its observed TMD records are NORMAL rather than SHARED; a hash match in content.map would therefore be evidence to investigate, not an assumption that all of its content is shared.
