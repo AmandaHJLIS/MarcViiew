@@ -5719,7 +5719,21 @@ static void show_nand_file_info(void)
                     content_info->hash[19]
                 );
 
-                if (nand_shared_map_loaded)
+                /*
+                 * /shared1/content.map only indexes shared TMD
+                 * contents (type bit 0x8000). Ordinary title
+                 * contents have their own <content id>.app file and
+                 * should not be reported as missing from the map.
+                 */
+                if ((content_info->type & 0x8000) == 0)
+                {
+                    snprintf(
+                        map_text,
+                        sizeof(map_text),
+                        "MAP:NOT SHARED"
+                    );
+                }
+                else if (nand_shared_map_loaded)
                 {
                     shared_info =
                         nand_find_shared_content_by_hash(
