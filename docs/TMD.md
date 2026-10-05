@@ -97,3 +97,36 @@ Documented Wii title-format information describes 0x4001 as DLC content that can
 
 MarcViiew's UI labels have a documented format basis, but they should be understood as descriptions of the TMD type, not assumptions about every application's internal purpose.
 
+
+
+## 9. Physical content resolution
+
+The TMD provides the logical identity of each content object, while the content type determines how MarcViiew should attempt to locate the physical file.
+
+For a NORMAL record (0x0001), the first location to investigate is the title's own content directory:
+
+    /title/<type>/<id>/content/<content id>.app
+
+For a SHARED record (0x8001), the content ID is not used as the /shared1/ filename. MarcViiew instead uses the record's SHA-1 with /shared1/content.map to resolve the shared-content identifier.
+
+Conceptually:
+
+    NORMAL:
+        TMD content ID -> title content/<ID>.app
+
+    SHARED:
+        TMD SHA-1 -> /shared1/content.map -> shared/<ID>.app
+
+This is a physical-location investigation model, not a claim that every NORMAL record is currently visible through MarcViiew's live ISFS browser.
+
+## 10. Hardware validation: mixed normal/shared TMDs
+
+The first successful live tests demonstrate that the TMD/content.map relationship is useful for real installed VC titles.
+
+Observed:
+
+- Ocarina of Time VC: 7 TMD content records; 3 records were type 0x8001 and all 3 SHA-1 values matched entries in /shared1/content.map.
+- Super Mario 64 VC: 7 TMD content records; 3 shared records were observed and all 3 matched /shared1/content.map.
+- Cave Story: 7 TMD content records; all observed records were type 0x0001, so there were no shared TMD records to resolve through content.map.
+
+These results demonstrate that the shared-content lookup should only be applied to records whose TMD type is 0x8001.
