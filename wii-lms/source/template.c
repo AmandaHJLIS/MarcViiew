@@ -18,6 +18,7 @@
 
 #include "marc_encoder.h"
 #include "marc_text_parser.h"
+#include "ui_font.h"
 
 #define MAX_GAMES 100
 #define MAX_SEARCH_RESULTS 100
@@ -7756,6 +7757,9 @@ int main(void)
         rmode->fbWidth *
         VI_DISPLAY_PIX_SZ
     );
+
+
+    ui_font_init();
 
 
     VIDEO_Configure(
