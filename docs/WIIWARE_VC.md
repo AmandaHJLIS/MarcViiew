@@ -1,6 +1,6 @@
 # WiiWare and Virtual Console
 
-**Last Updated:** 5th of October 2026
+**Last Updated:** 6th of October 2026
 
 ## 11. Cave Story observation
 
@@ -197,7 +197,7 @@ These can be exposed later without touching additional NAND paths.
 
 The first mixed-content VC tests provide useful evidence for the relationship between TMD records and /shared1/content.map.
 
-### The Legend of Zeldia Ocarina of Time VC
+### The Legend of Zelda Ocarina of Time VC
 
 Observed:
 
