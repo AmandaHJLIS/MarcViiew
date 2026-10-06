@@ -7605,6 +7605,10 @@ void show_loading_screen(
         "Wii Library System"
     );
 
+    print_centered(
+        "Font test: \xA9 \xAE \xE9 \xF1 \xFC"
+    );
+
     printf("\n");
 
 
