@@ -18,6 +18,7 @@
 
 #include "marc_encoder.h"
 #include "marc_text_parser.h"
+#include "ui_font.h"
 
 #define MAX_GAMES 100
 #define MAX_SEARCH_RESULTS 100
@@ -143,25 +144,40 @@ void print_centered(
     const char *text
 ) {
 
-    int length =
-        strlen(text);
+    if (ui_font_ready())
+    {
+        int column;
+        int row;
 
-    int padding =
-        (CONSOLE_COLUMNS - length) / 2;
+        CON_GetPosition(
+            &column,
+            &row
+        );
 
-    if (
-        padding < 0
-    )
-        padding = 0;
+        ui_font_draw_centered(
+            text,
+            20 + row * ui_font_line_height()
+        );
 
-    print_spaces(
-        padding
-    );
+        /*
+         * Keep libogc's console cursor as the layout cursor. The
+         * console writes only a newline here, while the actual glyphs
+         * are supplied by MarcViiew's centralized UI font renderer.
+         */
+        printf("\n");
+        return;
+    }
 
-    printf(
-        "%s\n",
-        text
-    );
+    {
+        int length = strlen(text);
+        int padding = (CONSOLE_COLUMNS - length) / 2;
+
+        if (padding < 0)
+            padding = 0;
+
+        print_spaces(padding);
+        printf("%s\n", text);
+    }
 }
 
 
@@ -169,21 +185,14 @@ void print_ui_line(
     char character
 ) {
 
-    int padding =
-        (CONSOLE_COLUMNS - UI_WIDTH) / 2;
+    char line[UI_WIDTH + 1];
 
-    print_spaces(
-        padding
-    );
+    for (int i = 0; i < UI_WIDTH; ++i)
+        line[i] = character;
 
-    for (
-        int i = 0;
-        i < UI_WIDTH;
-        i++
-    )
-        putchar(character);
+    line[UI_WIDTH] = '\0';
 
-    putchar('\n');
+    print_centered(line);
 }
 
 
@@ -7755,6 +7764,16 @@ int main(void)
         rmode->xfbHeight,
         rmode->fbWidth *
         VI_DISPLAY_PIX_SZ
+    );
+
+    /*
+     * Use MarcViiew's centralized UI font renderer for visible text.
+     * It uses the Wii system font already exposed by libogc and draws
+     * directly into the existing framebuffer.
+     */
+    ui_font_init(
+        xfb,
+        rmode
     );
 
 
