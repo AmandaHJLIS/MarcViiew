@@ -136,8 +136,7 @@ Fields and conventions may be expanded or revised in future
 versions. Changes to the profile should be documented through
 version history.
 
-| 1.1 | 06/10/2026 | Added 338 carrier-type usage and clarified physical/digital treatment |
+| Version | Date | Change |
 |---|---|---|
-| 1.0 | 13/09/2026 | Initial MarcViiew MARC21 profile |
-|---|---|---|
+| 1.1 | 2026-10-06 | Added 338 carrier-type usage and clarified physical/digital treatment |
 | 1.0 | 2026-09-13 | Initial MarcViiew MARC21 profile |
