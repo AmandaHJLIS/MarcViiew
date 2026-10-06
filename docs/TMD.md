@@ -1,6 +1,6 @@
 # TMD — Title Metadata
 
-**Last Updated:** 5th of October 2026
+**Last Updated:** 6th of October 2026
 
 ## 6. TMD (Title Metadata)
 
@@ -125,7 +125,7 @@ The first successful live tests demonstrate that the TMD/content.map relationshi
 
 Observed:
 
-- The Legend of Zeldia Ocarina of Time VC: 7 TMD content records; 3 records were type 0x8001 and all 3 SHA-1 values matched entries in /shared1/content.map.
+- The Legend of Zelda Ocarina of Time VC: 7 TMD content records; 3 records were type 0x8001 and all 3 SHA-1 values matched entries in /shared1/content.map.
 - Super Mario 64 VC: 7 TMD content records; 3 shared records were observed and all 3 matched /shared1/content.map.
 - Cave Story: 7 TMD content records; all observed records were type 0x0001, so there were no shared TMD records to resolve through content.map.
 
