@@ -112,7 +112,7 @@ Three useful title tests have now been recorded:
 
 The observed TMD contains 7 normal (0x0001) records and no shared (0x8001) records. Therefore content.map is not expected to resolve any of its TMD records.
 
-### The Legend of Zeldia Ocarina of Time VC
+### The Legend of Zelda Ocarina of Time VC
 
 The observed TMD contains 7 records, including 3 shared (0x8001) records. All 3 shared records produced SHA-1 matches in /shared1/content.map.
 
