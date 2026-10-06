@@ -2,9 +2,9 @@
 
 **Status:** Current  
 
-**Version:** 1.0  
+**Version:** 1.1  
 
-**Last Updated:** 13 September 2026
+**Last Updated:** 6 October 2026
 
 ## 1. Overview
 
@@ -59,6 +59,20 @@ MarcViiew use: Wii disc description
 The 300 field describes the physical Wii disc associated with
 the record.
 
+## 338 — Carrier Type
+
+MarcViiew use: Carrier type for physical Wii releases
+
+The 338 field identifies the carrier used for physical Wii releases.
+
+The current profile uses `computer disc` with `$2=rdacarrier`.
+
+Example:
+
+338 ## $a computer disc $2 rdacarrier
+
+Digital releases are not assigned this physical carrier field by default.
+
 ## 500 — General Note
 
 MarcViiew use: Game synopsis
@@ -93,10 +107,11 @@ MarcViiew use: WiiExt vocabulary identifier
 The 655 $2 subfield identifies WiiExt as the source vocabulary
 for the associated genre/form term.
 
-## MarcViiew uses:
+MarcViiew uses:
 
-$2 Wiiext
-3. WiiExt
+`$2=wiiext`
+
+## 3. WiiExt
 
 WiiExt is an unofficial vocabulary/profile developed for use with
 MarcViiew.
@@ -121,6 +136,8 @@ Fields and conventions may be expanded or revised in future
 versions. Changes to the profile should be documented through
 version history.
 
-| 1.0 | 13/09/2026 | Creation of documentation |
+| 1.1 | 06/10/2026 | Added 338 carrier-type usage and clarified physical/digital treatment |
+|---|---|---|
+| 1.0 | 13/09/2026 | Initial MarcViiew MARC21 profile |
 |---|---|---|
 | 1.0 | 2026-09-13 | Initial MarcViiew MARC21 profile |
