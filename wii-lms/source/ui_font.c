@@ -23,6 +23,7 @@
 #define UI_FONT_GLYPH_BYTES 16
 #define UI_FONT_TEXEL_STRIDE 32
 #define UI_FONT_TEXEL_BUFFER_SIZE 1024
+#define UI_FONT_THRESHOLD 3
 
 static u8 *ui_font_gfx = NULL;
 static void *ui_system_font = NULL;
@@ -164,19 +165,56 @@ static void ui_build_system_glyph(
             )
                 continue;
 
-            if (
-                ui_i4_pixel(
-                    texels,
-                    UI_FONT_TEXEL_STRIDE,
-                    source_x,
-                    source_y
-                ) >= 4
-            ) {
-                row |=
-                    (u8)(1 << (
-                        7 -
-                        (x + x_offset)
-                    ));
+            /*
+             * When a system-font glyph is wider than the console cell, one
+             * destination pixel represents more than one source texel.
+             * Sample the whole source interval and keep the strongest texel.
+             * This preserves thin strokes much better than taking only the
+             * first source pixel in the interval.
+             */
+            {
+                int source_x_end;
+
+                if (glyph_width <= UI_FONT_GLYPH_BYTES / 2) {
+                    source_x_end = source_x + 1;
+                } else {
+                    source_x_end =
+                        ((x + 1) * glyph_width) /
+                        (UI_FONT_GLYPH_BYTES / 2);
+
+                    if (source_x_end <= source_x)
+                        source_x_end = source_x + 1;
+                }
+
+                if (source_x_end > glyph_width)
+                    source_x_end = glyph_width;
+
+                u8 strongest = 0;
+
+                for (
+                    int sample_x = source_x;
+                    sample_x < source_x_end;
+                    sample_x++
+                ) {
+                    u8 texel =
+                        ui_i4_pixel(
+                            texels,
+                            UI_FONT_TEXEL_STRIDE,
+                            sample_x,
+                            source_y
+                        );
+
+                    if (texel > strongest)
+                        strongest = texel;
+                }
+
+                if (strongest >= 3) {
+                    row |=
+                        (u8)(1 << (
+                            7 -
+                            (x + x_offset)
+                        ));
+                }
             }
         }
 
