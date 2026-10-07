@@ -21,6 +21,10 @@ For the experimental branch, please visit:
 https://github.com/AmandaHJLIS/MarcViiew/tree/imported-records-template
 > **Note:** The experimental branch is not recommended for usage. It is designed for hardware testing which may result in DSI exceptions, experimental IOS changes and overall instability. Use with caution and have your NAND backed up.
 
+For the UI experimental branch, please visit:
+https://github.com/AmandaHJLIS/MarcViiew/tree/ui-font-testing
+> **Note:** The UI experimental branch is not recommended for usage. It is designed for hardware testing which may result in DSI exceptions, experimental IOS changes and overall instability. Use with caution and have your NAND backed up. The UI experimental branch also is a massive WIP due to MarcViiewLibGuiCompat still being in development.
+
 > **Branch note:** This README describes the **`main` branch**. The former `imported-records-template` experimental branch has been merged into `main` following hardware testing. Future Wii application source changes can continue to be developed experimentally before being merged.
 
 ## MARC 21
