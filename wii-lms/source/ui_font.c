@@ -46,13 +46,36 @@ static u8 ui_i4_pixel(
     return (*p >> 4) & 0x0F;
 }
 
+static u8 ui_i4_pixel(
+    const u8 *image,
+    int stride,
+    int x,
+    int y
+) {
+    const u8 *p =
+        image +
+        ((y / 8) * ((stride << 1) / 8) << 5) +
+        ((x / 8) << 5) +
+        ((x % 8) / 2) +
+        ((y % 8) << 2);
+
+    if (x & 1)
+        return *p & 0x0F;
+
+    return (*p >> 4) & 0x0F;
+}
+
 static void ui_build_system_glyph(
     u32 codepoint,
     u8 *destination,
     const sys_fontheader *header
 ) {
     u8 texels[UI_FONT_TEXEL_BUFFER_SIZE];
-    s32 width = 0;
+    s32 glyph_width = 0;
+    int source_height;
+    int copy_width;
+    int x_offset;
+    int y_offset;
 
     memset(
         texels,
@@ -60,81 +83,120 @@ static void ui_build_system_glyph(
         sizeof(texels)
     );
 
+    /*
+     * SYS_GetFontTexel() already extracts one glyph from the Wii ROM font.
+     * The destination is still tiled I4 data, so we only need to decode that
+     * temporary image here.
+     *
+     * The important distinction is between cell_width and glyph width:
+     * cell_width is the full font cell, while glyph_width is the actual
+     * character advance/ink width. Treating the entire cell as the glyph
+     * squashes normal-width characters into a tiny mark.
+     */
     SYS_GetFontTexel(
         (s32)codepoint,
         texels,
         0,
         UI_FONT_TEXEL_STRIDE,
-        &width
+        &glyph_width
     );
 
+    source_height = header->cell_height;
+
+    if (
+        source_height <= 0 ||
+        glyph_width <= 0
+    )
+        return;
+
+    if (glyph_width > UI_FONT_GLYPH_BYTES / 2)
+        copy_width = UI_FONT_GLYPH_BYTES / 2;
+    else
+        copy_width = glyph_width;
+
     /*
-     * The ROM font is a tiled intensity texture. Convert it to the exact
-     * 1-bit, 8x16 format expected by libogc's console renderer.
-     *
-     * Horizontal sampling is scaled to the console's eight-pixel cell.
-     * Vertical sampling is likewise scaled to sixteen rows.
+     * Keep glyphs centred in the console's 8-pixel cell. If the system font
+     * glyph is wider than eight pixels, sample it down; if it is narrower,
+     * preserve its native width rather than stretching it.
      */
+    x_offset =
+        (UI_FONT_GLYPH_BYTES / 2 - copy_width) / 2;
+
+    /*
+     * The console is 16 pixels high. Centre a shorter system-font cell rather
+     * than stretching it vertically; for a 16-pixel system cell this is a
+     * direct 1:1 copy.
+     */
+    y_offset =
+        (UI_FONT_GLYPH_BYTES - source_height) / 2;
+
+    if (y_offset < 0)
+        y_offset = 0;
+
+    memset(
+        destination,
+        0,
+        UI_FONT_GLYPH_BYTES
+    );
+
     for (
         int y = 0;
         y < UI_FONT_GLYPH_BYTES;
         y++
     ) {
-        u8 row = 0;
+        int source_y;
 
-        int source_y =
-            (y * header->cell_height) /
-            UI_FONT_GLYPH_BYTES;
+        if (source_height == UI_FONT_GLYPH_BYTES) {
+            source_y = y;
+        } else {
+            source_y =
+                ((y - y_offset) * source_height) /
+                UI_FONT_GLYPH_BYTES;
+        }
 
         if (
-            source_y >=
-            header->cell_height
+            source_y < 0 ||
+            source_y >= source_height
         )
-            source_y =
-                header->cell_height - 1;
+            continue;
+
+        u8 row = 0;
 
         for (
             int x = 0;
-            x < 8;
+            x < copy_width;
             x++
         ) {
-            int source_x0 =
-                (x * header->cell_width) / 8;
+            int source_x;
 
-            int source_x1 =
-                ((x + 1) * header->cell_width) / 8;
-
-            if (
-                source_x1 <=
-                source_x0
-            )
-                source_x1 =
-                    source_x0 + 1;
-
-            int lit = 0;
-
-            for (
-                int sx = source_x0;
-                sx < source_x1;
-                sx++
-            ) {
-                if (
-                    sx < UI_FONT_TEXEL_STRIDE &&
-                    ui_i4_pixel(
-                        texels,
-                        UI_FONT_TEXEL_STRIDE,
-                        sx,
-                        source_y
-                    ) >= 4
-                ) {
-                    lit = 1;
-                    break;
-                }
+            if (glyph_width <= UI_FONT_GLYPH_BYTES / 2) {
+                source_x = x;
+            } else {
+                source_x =
+                    (x * glyph_width) /
+                    (UI_FONT_GLYPH_BYTES / 2);
             }
 
-            if (lit)
+            if (
+                source_x >= glyph_width ||
+                source_x >= UI_FONT_TEXEL_STRIDE
+            )
+                continue;
+
+            if (
+                ui_i4_pixel(
+                    texels,
+                    UI_FONT_TEXEL_STRIDE,
+                    source_x,
+                    source_y
+                ) >= 4
+            ) {
                 row |=
-                    (u8)(1 << (7 - x));
+                    (u8)(1 << (
+                        7 -
+                        (x + x_offset)
+                    ));
+            }
         }
 
         destination[y] = row;
