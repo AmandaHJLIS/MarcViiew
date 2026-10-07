@@ -12,4 +12,6 @@ Library of Congress — for the MARC 21 bibliographic standards.
 
 ISO/TC 46 — for ISO 2709, Information and documentation — Format for information exchange.
 
+dborth/libgui — for providing the necessary UI framework, later being used as a compatibility layer.
+
 Lilyflower — for extensively testing MarcViiew on vWii and providing external `.mrc` files.
