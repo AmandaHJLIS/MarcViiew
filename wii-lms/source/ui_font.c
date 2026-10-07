@@ -46,25 +46,6 @@ static u8 ui_i4_pixel(
     return (*p >> 4) & 0x0F;
 }
 
-static u8 ui_i4_pixel(
-    const u8 *image,
-    int stride,
-    int x,
-    int y
-) {
-    const u8 *p =
-        image +
-        ((y / 8) * ((stride << 1) / 8) << 5) +
-        ((x / 8) << 5) +
-        ((x % 8) / 2) +
-        ((y % 8) << 2);
-
-    if (x & 1)
-        return *p & 0x0F;
-
-    return (*p >> 4) & 0x0F;
-}
-
 static void ui_build_system_glyph(
     u32 codepoint,
     u8 *destination,
