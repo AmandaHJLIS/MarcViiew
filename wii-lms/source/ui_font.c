@@ -208,7 +208,7 @@ static void ui_build_system_glyph(
                         strongest = texel;
                 }
 
-                if (strongest >= 3) {
+                if (strongest >= UI_FONT_THRESHOLD) {
                     row |=
                         (u8)(1 << (
                             7 -
