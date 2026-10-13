@@ -41,19 +41,19 @@ For MarcViiew's project-specific MARC usage and field definitions, see the [Marc
 
 ## WDRD
 
-<img width="222" height="64" alt="2e827bbe957879504e4aad14f3112ad6" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
+<img width="222" height="64" alt="WDRD logo" src="https://github.com/user-attachments/assets/9b08f8ee-1317-4799-ae9b-e8b9813c5198" />
 
-Wii Digital Resource Description (WDRD) is a Wii-specific metadata framework for describing WiiWare, Virtual Console, and Wii Channel resources, including their installed representations on the Wii NAND.
+Wii Digital Resource Description (WDRD) is a proposed Wii-specific metadata framework for describing WiiWare, Virtual Console, Wii Channel titles, and their technical content structures, including installed representations on the Wii NAND.
 
-WDRD is designed to describe WiiWare, Virtual Console, and Wii Channel resources, their technical structure and installed representations, and associated preservation evidence. WDRD is intended to address the Wii-specific technical and preservation information that those general standards (MARC 21, RDA, AACR2) do not attempt to model.
+WDRD focuses on platform-specific identification and technical description: title IDs and types, region and version information, Title Metadata (TMD) data, content counts and indexes, content IDs and types, sizes, hashes, and relationships between titles and their content. It can also document observed storage locations and distinguish platform-defined metadata from findings recorded during hardware or file-structure research. The aim is to support structured investigation of Wii software, including WiiWare/Virtual Console reverse-engineering and modding research.
 
-WDRD describes the selected title using title IDs, title type, region, version, and other stable platform identifiers. For technical metadata, it uses
-TMD information, content counts, boot indices, content types, sizes, hashes, and related title metadata. WDRD can also describe where the selected item is stored, using observed NAND paths, title-local content, shared content, WAD representations, and distinctions between logical and physically observed content. 
+WDRD is not intended to replace MARC 21, RDA, or other general cataloguing standards. Instead, it provides a specialised technical description layer for Wii-specific structures that those standards do not attempt to model. Bibliographic description and Wii-specific technical description serve related but different purposes.
 
-WDRD is still under active development. It is an independent project and is not an official Library of Congress, MARC 21, RDA, AACR2, Nintendo, or industry standard.
+**PREMIS is a reference, not the basis of WDRD.** PREMIS is a digital-preservation metadata standard. WDRD may consult its documentation for examples of how a metadata model defines entities, properties, relationships, and element-level guidance, but WDRD does not implement PREMIS, claim PREMIS conformance, or adopt its data dictionary wholesale. PREMIS-specific preservation events and requirements are outside WDRD's core purpose unless a future, explicitly scoped feature needs them.
+
+WDRD is still under active development. It is an independent project and is not an official Library of Congress, MARC 21, RDA, AACR2, PREMIS, Nintendo, or industry standard.
 
 For the WDRD metadata framework profile, see the [WDRD documentation POF Profile](WDRDdocumentationPOF.MD).
-
 ## Wiiext
 
 <img width="289" height="102" alt="Wii-Logo" src="https://github.com/user-attachments/assets/1077167d-ca67-45e8-bb7b-81f281b966ef" />
