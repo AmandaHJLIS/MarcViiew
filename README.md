@@ -332,15 +332,15 @@ These projects are intended to complement MarcViiew's existing catalogue and LIS
 
 MarcViiew is currently in **beta development**.
 
-The current state corresponds to the **0.7.0-beta development milestone**, following the feature-focused 0.5.0-beta and subsequent development work.
+The current state corresponds to the **0.7.1-beta development milestone**, following the feature-focused 0.5.0-beta and subsequent development work.
 
-The `main` branch contains the hardware-tested 0.7.0-beta milestone.
+The `main` branch contains the hardware-tested 0.7.1-beta milestone.
 
 MarcViiew contains functional MARC 21 and ISO 2709 support through ViiewLib, including `.mrc` encoding and Wii hardware testing. However, the MARC 21 and ISO 2709 implementation is still under active development and should not be considered a complete implementation of either standard or production-ready LMS software.
 
 ## Setup
 
-The 0.7.0-beta release uses the standard Wii application setup.
+The 0.7.1-beta release uses the standard Wii application setup.
 
 1. Build the Wii application using the project's devkitPPC/libogc development environment.
 
@@ -361,7 +361,7 @@ The 0.7.0-beta release uses the standard Wii application setup.
 
 5. Open the Homebrew Channel and launch MarcViiew.
 
-The 0.7.0-beta milestone has been built and tested on real Wii hardware; hardware testing is recommended after future source builds.
+The 0.7.1-beta milestone has been built and tested on real Wii hardware; hardware testing is recommended after future source builds.
 
 ## Development Notes
 
